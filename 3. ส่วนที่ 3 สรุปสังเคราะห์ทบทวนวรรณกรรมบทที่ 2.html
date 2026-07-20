@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2R Research Assistant - File Import & Synthesis System (V2)</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // ตั้งค่า Worker สำหรับ pdf.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f9;       /* พื้นหลังสีฟ้าอ่อน/เทาอ่อน (คงไว้เพื่อความสะอาดตา) */
+            --card-bg: #ffffff;        /* สีขาวบริสุทธิ์ */
+            --primary-color: #007bff;  /* สีน้ำเงินสดใส (Bright Blue) - เพิ่มความสว่างจากเดิม */
+            --text-color: #2c3e50;     /* สีเทาอมน้ำเงินเข้ม (Dark Slate) - ให้ความรู้สึกทันสมัยกว่าสีดำสนิท */
+            --border-color: #b3d9ff;   /* สีฟ้าอ่อนสดใสสำหรับเส้นขอบ */
+            --hover-color: #0056b3;    /* สีเมื่อเอาเมาส์วาง (Darker Blue) */
+            --success-color: #28a745;  /* สีเขียวสำเร็จ (คงไว้เพื่อแสดงความก้าวหน้า) */
+            --word-color: #1f3d59;     /* สีข้อความรอง/หัวข้อย่อยที่ดูสดใสขึ้น */
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Sarabun', 'TH Sarabun New';
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        /* แผงควบคุมฝั่งซ้าย */
+        .sidebar {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: fit-content;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+        }
+        .param-group {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .param-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        /* พื้นที่ทำงานฝั่งขวา */
+        .workspace {
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-extract { background-color: #6c757d; }
+        .btn-extract:hover { background-color: #5a6268; }
+        .btn-send { background-color: var(--success-color); }
+        .btn-send:hover { background-color: #218838; }
+        
+        /* ปุ่มจัดการผลลัพธ์ใหม่ */
+        .btn-download { background-color: var(--word-color); }
+        .btn-download:hover { background-color: #1e3d6b; }
+        .btn-copy { background-color: #17a2b8; }
+        .btn-copy:hover { background-color: #138496; }
+        
+        .file-input-wrapper {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #e6eef8;
+            border: 1px dashed #b6d1f4;
+            border-radius: 6px;
+        }
+        
+        .action-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <h2>ระบบนำเข้าเอกสารวิจัย</h2>
+        <p style="font-size: 0.9rem; color: #666;">รองรับไฟล์ .pdf, .docx, .txt</p>
+
+        <div class="param-group">
+            <label for="lmUrl">LM Studio URL:</label>
+            <input type="text" id="lmUrl" value="http://localhost:1234/v1/chat/completions" style="width:100%; padding:6px; box-sizing:border-box;">
+
+            <label for="modelName" style="margin-top:10px;">Model:</label>
+            <input type="text" id="modelName" value="gemma-4-e4b-it" style="width:100%; padding:6px; box-sizing:border-box;">
+            
+            <label for="tempRange" style="margin-top:10px;">Temperature (ความเป๊ะ):</label>
+            <input type="range" id="tempRange" min="0.1" max="1.0" step="0.1" value="0.3" style="width:100%;">
+            <span id="tempVal">0.3</span>
+        </div>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="card">
+            <h3>1. นำเข้าไฟล์เอกสารอ้างอิง</h3>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept=".pdf, .docx, .txt" style="width: 100%;">
+                <div class="btn-group">
+                    <button class="btn btn-extract" onclick="extractFileText()">📥 ดึงข้อความจากไฟล์</button>
+                    <span id="extractStatus" style="align-self: center; font-size: 0.9rem; color: #2c7bb6; font-weight: bold;"></span>
+                </div>
+            </div>
+            
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">ข้อมูลดิบที่ดึงได้ (Context):</label>
+            <textarea id="userInputBox" rows="6" placeholder="ข้อความจากไฟล์จะปรากฏที่นี่..."></textarea>
+        </div>
+
+        <div class="card">
+            <h3>2. สังเคราะห์วรรณกรรม (AI Synthesis)</h3>
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">คำสั่งควบคุม AI (System Prompt):</label>
+            <textarea id="systemPromptBox" rows="4">
+			# 1. Role & Persona
+			You are an Expert Academic Literature Reviewer and Synthesis Assistant specializing in academic research at the master's and doctoral levels. Your task is to deeply analyze academic documents (PDFs, articles) provided by the user and extract comprehensive information to construct "Chapter 2: Literature Review". You prioritize academic depth, structural clarity, and write exclusively in highly formal Academic Thai.
+
+			# 2. Context & Goal
+			Your goal is to extract deep insights, methodological contexts, structural relationships between variables, and research gaps. You must categorize the analyzed content into 4 distinct academic pillars:
+			1) แนวคิด (Concept)
+			2) ทฤษฎี (Theory)
+			3) วิธีการพัฒนาระบบต้นแบบ (System/Prototype Development)
+			4) งานวิจัยที่เกี่ยวข้อง (Related Research)
+
+			If a document contains multiple pillars, you MUST extract and separate them into their respective templates. 
+
+			# 3. Constraints & Formatting Rules (STRICTLY ENFORCED)
+			- **MISSING DATA HANDLING:** If the document completely lacks a specific academic pillar (e.g., no Concept or no Related Research), or if a specific sub-topic within the template (e.g., Regression) is not present in the text, you MUST explicitly output `[ไม่มีระบุ]` for that section. Do not guess or fabricate information.
+			- **Formatting Rule:** Use `###` for the paper title and `- **[Topic]:**` for main sections.
+			- **Spacing:** Insert a double line break (Press Enter twice) after every section to ensure high readability.
+			- **Lists:** For listing multiple variables, outcomes, or elements, use numbered lists (1., 2., 3.) on new lines.
+			- **Detail & Depth:** For the sections that DO exist, provide detailed explanations. When discussing findings, explicitly state the direction of relationships (e.g., "ส่งผลให้เพิ่มขึ้น", "มีความสัมพันธ์เชิงบวกกับ").
+
+			# 4. Output Templates (Strictly Follow the Appropriate Template)
+
+			**>>> USE THIS TEMPLATE FOR: [Concept] / [Theory] / [System Development] <<<**
+
+			### [ชื่อผู้แต่ง], ([ปีที่พิมพ์]). [ชื่อหนังสือ/บทความ]
+
+			- **ประเภทเนื้อหา:** [ระบุให้ชัดเจน: แนวคิด (Concept) / ทฤษฎี (Theory) / วิธีการพัฒนาระบบต้นแบบ (System/Prototype Development)]
+
+			- **นิยามและสาระสำคัญ:** 
+			[อธิบายความหมาย แก่นของแนวคิด/ทฤษฎี หรือหลักการทำงานของระบบต้นแบบอย่างละเอียด]
+
+			- **องค์ประกอบและมิติที่เกี่ยวข้อง:** 
+			[แจกแจงองค์ประกอบหลัก หากมีหลายมิติให้เขียนเป็น 1. ... 2. ... 3. ...]
+
+			- **ความสำคัญต่อการสร้างงานวิจัย:** 
+			[อธิบายว่าแนวคิด ทฤษฎี หรือระบบนี้ จะนำไปใช้เป็นรากฐานในการนิยามตัวแปร หรือออกแบบงานวิจัยในบทที่ 2 ได้อย่างไร]
+
+			- **บรรณานุกรม (APA 7th):** 
+			[Generate APA citation]
+
+
+			**>>> USE THIS TEMPLATE FOR: [Related Research] <<<**
+
+			### [ชื่อผู้แต่ง], ([ปีที่พิมพ์]). [ชื่อหนังสือ/บทความ]
+
+			- **ประเภทเนื้อหา:** งานวิจัยที่เกี่ยวข้อง (Related Research)
+
+			- **สรุปสาระสำคัญ:** 
+			[สรุปภาพรวมของงานวิจัยอย่างกระชับและได้ใจความ]
+
+			- **วัตถุประสงค์และระเบียบวิธีวิจัย:** 
+			  - วัตถุประสงค์หลัก: [ระบุวัตถุประสงค์ของการวิจัย]
+			  - ระเบียบวิธีวิจัย: [อธิบายกลุ่มตัวอย่าง ขนาดตัวอย่าง เครื่องมือที่ใช้ และขั้นตอนการเก็บข้อมูล]
+
+			- **นวัตกรรม/ผลลัพธ์สำคัญ:** 
+			[ระบุผลการศึกษาที่โดดเด่น เทคโนโลยี หรือวิธีการใหม่ๆ ที่พบในการศึกษา]
+
+			- **ผลการศึกษาและความสัมพันธ์ของตัวแปร:** 
+			[อธิบายผลลัพธ์เชิงลึก ระบุให้ชัดเจนว่าตัวแปรใดส่งผลต่อตัวแปรใด ในทิศทางใด (เพิ่มขึ้น/ลดลง/สนับสนุน/เป็นอุปสรรค)]
+
+			- **การวิเคราะห์เพื่อหาตัวทำนาย (Regression):** 
+			[ระบุผลการวิเคราะห์สมการถดถอย ตัวแปรใดเป็นตัวทำนายที่สำคัญ ระดับนัยสำคัญทางสถิติ]
+
+			- **ผลลัพธ์เชิงปริมาณ:** 
+			[ระบุค่าสถิติที่สำคัญ เช่น ค่าเฉลี่ย, ร้อยละ, R-square, ค่าอิทธิพล (Effect size) หรือค่าความเชื่อมั่นต่างๆ]
+
+			- **ประเด็นสนับสนุนงานวิจัย:** 
+			[ระบุจุดเชื่อมโยง แนวคิด หรือตัวแปร ที่สามารถนำมาสนับสนุนงานวิจัยที่เรากำลังศึกษาอยู่]
+
+			- **ข้อจำกัดและช่องว่างการวิจัย (Research Gaps):** 
+			[ระบุข้อจำกัดของงานวิจัยฉบับนี้ หรือสิ่งที่ผู้แต่งเสนอแนะให้ศึกษาเพิ่มเติมในอนาคต]
+
+			- **หมายเหตุสำหรับการสังเคราะห์:** 
+			[ระบุสั้นๆ ว่าจะนำไปใช้สนับสนุนเป็นงานวิจัยหลักในหัวข้อใด หรือใช้เชื่อมโยงเนื้อหาในส่วนใดของกรอบแนวคิด]
+
+			- **บรรณานุกรม (APA 7th):** 
+			[Generate APA citation]
+
+			</textarea>
+            
+            <div class="btn-group">
+                <button class="btn btn-send" onclick="submitToLocalAI()">🚀 ส่งข้อมูลให้ AI ประมวลผลแบบริ้ววิ่ง</button>
+            </div>
+
+            <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                <div class="action-header">
+                    <label style="font-weight: bold;">ร่างเนื้อหาวิจัยที่ได้จาก AI (ผลลัพธ์):</label>
+                    
+                    <div class="btn-group" style="margin-top: 0; gap: 5px;">
+                        <button class="btn btn-copy" style="padding: 6px 14px; font-size: 0.85rem;" onclick="copyOutputText()">📋 คัดลอกข้อความ</button>
+                        <button class="btn btn-download" style="padding: 6px 14px; font-size: 0.85rem;" onclick="exportToWord()">💾 ดาวน์โหลดเป็นไฟล์ Word (.doc)</button>
+                    </div>
+                </div>
+                <textarea id="outputBox" rows="15" placeholder="ผลลัพธ์จะค่อย ๆ วิ่งแสดงตรงนี้..."></textarea>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // อัปเดตค่า Temperature บนหน้าจอ
+    document.getElementById('tempRange').addEventListener('input', (e) => {
+        document.getElementById('tempVal').innerText = e.target.value;
+    });
+
+    // ==========================================
+    // 1. ระบบดึงข้อความจากไฟล์ (Extractor)
+    // ==========================================
+    async function extractFileText() {
+        const fileInput = document.getElementById('fileInput');
+        const statusText = document.getElementById('extractStatus');
+        const userInputBox = document.getElementById('userInputBox');
+        
+        if (!fileInput.files[0]) {
+            alert('กรุณาเลือกไฟล์ก่อนครับ');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const fileName = file.name.toLowerCase();
+        statusText.innerText = "กำลังดึงข้อความ... โปรดรอสักครู่";
+        userInputBox.value = "";
+
+        try {
+            if (fileName.endsWith('.txt')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userInputBox.value = e.target.result;
+                    statusText.innerText = "✅ ดึงข้อความจาก .txt สำเร็จ!";
+                };
+                reader.readAsText(file, 'UTF-8');
+            } 
+            else if (fileName.endsWith('.docx')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                userInputBox.value = result.value;
+                statusText.innerText = "✅ ดึงข้อความจาก Word สำเร็จ!";
+            } 
+            else if (fileName.endsWith('.pdf')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = "";
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + "\n\n";
+                }
+                userInputBox.value = fullText;
+                statusText.innerText = `✅ ดึงข้อความจาก PDF สำเร็จ! (รวม ${pdf.numPages} หน้า)`;
+            } 
+            else {
+                alert('ระบบรองรับเฉพาะไฟล์ .pdf, .docx และ .txt เท่านั้นครับ');
+                statusText.innerText = "❌ รูปแบบไฟล์ไม่รองรับ";
+            }
+        } catch (error) {
+            console.error(error);
+            statusText.innerText = "❌ เกิดข้อผิดพลาดในการดึงข้อความ";
+            alert("Error: " + error.message);
+        }
+    }
+
+    // ==========================================
+    // 2. ระบบส่งข้อมูลไปยัง LM Studio (Streaming)
+    // ==========================================
+    async function submitToLocalAI() {
+        const outputBox = document.getElementById('outputBox');
+        const rawText = document.getElementById('userInputBox').value.trim();
+        const systemPrompt = document.getElementById('systemPromptBox').value;
+        const lmUrl = document.getElementById('lmUrl').value;
+        const modelName = document.getElementById('modelName').value;
+        const temperature = parseFloat(document.getElementById('tempRange').value);
+
+        if (!rawText) {
+            alert("กรุณาอัปโหลดไฟล์และดึงข้อความก่อนส่งให้ AI ครับ");
+            return;
+        }
+
+        outputBox.value = "กำลังเชื่อมต่อเซิร์ฟเวอร์ Local... กรุณารอสักครู่\n";
+
+        const finalPrompt = `
+        อ้างอิงจากข้อมูลต่อไปนี้:
+        ---
+        \n${rawText}\n
+        ---
+        คำสั่ง: จงทำตาม System Prompt ที่กำหนดไว้
+        `;
+
+        try {
+            const response = await fetch(lmUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: finalPrompt }
+                    ],
+                    temperature: temperature,
+                    stream: true 
+                })
+            });
+
+            if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อ LM Studio ได้ กรุณาตรวจสอบว่าเปิดเซิร์ฟเวอร์หรือยัง");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            outputBox.value = ""; 
+            let fullText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices[0].delta.content;
+                            if (content) {
+                                fullText += content;
+                                let cleanText = fullText.replace(/<\|channel>thought[\s\S]*?<channel|>/g, '').trim();
+                                cleanText = cleanText.replace(/<\|channel>thought[\s\S]*/g, '').trim();
+                                
+                                outputBox.value = cleanText;
+                                outputBox.scrollTop = outputBox.scrollHeight;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+        } catch (error) {
+            outputBox.value = "เกิดข้อผิดพลาด: " + error.message + "\n\nคำแนะนำ: ตรวจสอบว่าเปิดโปรแกรม LM Studio และ Local Server ทำงานอยู่หรือไม่";
+        }
+    }
+
+    // ==========================================
+    // 3. ระบบบันทึกและดาวน์โหลดผลลัพธ์ (Download & Copy)
+    // ==========================================
+    function exportToWord() {
+        const content = document.getElementById('outputBox').value;
+        if (!content.trim()) {
+            alert('ไม่มีข้อมูลร่างเนื้อหาวิจัยให้บันทึกครับ');
+            return;
+        }
+
+        // แปลงเว้นบรรทัดเป็นโครงสร้าง Paragraph สำหรับ Word (.doc) ตามหลักการในเอกสารแนบ 2
+        const formattedHtml = content.split('\n\n').map(p => {
+            // ป้องกันปัญหาย่อยภายในย่อหน้าเดียว
+            return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+        }).join('');
+
+        // หัวไฟล์กำหนดคุณลักษณะ Microsoft Word และตั้งค่าฟอนต์ยอดนิยมทางวิชาการ (TH Sarabun New ขนาด 16pt พร้อมย่อหน้า 1.5 ซม.)
+        const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><style>body {font-family: 'TH Sarabun New', 'Sarabun', sans-serif; font-size: 16pt;} p {margin-bottom: 8pt; text-indent: 1.5cm; text-align: justify; line-height: 1.5;}</style></head><body>";
+        const footer = "</body></html>";
+        
+        const sourceHTML = header + formattedHtml + footer;
+        // การใส่ \ufeff (Byte Order Mark) ทำให้ Word อ่านภาษาไทยได้สมบูรณ์ 100%
+        const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        
+        const file = document.createElement('a');
+        file.href = url;
+        file.download = 'ร่างเนื้อหาวิจัย_AI_Synthesis.doc';
+        file.click();
+        
+        // คืนหน่วยความจำ
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
+
+    function copyOutputText() {
+        const outputBox = document.getElementById('outputBox');
+        if (!outputBox.value.trim()) {
+            alert('ไม่มีเนื้อหาให้คัดลอกครับ');
+            return;
+        }
+        outputBox.select();
+        document.execCommand('copy');
+        alert('📋 คัดลอกเนื้อหาลงคลิปบอร์ดเรียบร้อยแล้ว! สามารถนำไปวาง (Paste) ในโปรแกรมอื่นได้ทันที');
+    }
+</script>
+
+</body>
+</html>

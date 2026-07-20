@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Token Counter (100% Local)</title>
+    <!-- เอาลิงก์ Google Fonts ออกทั้งหมด เพื่อให้ทำงาน Offline ได้ 100% แบบไม่ต้องพึ่งอินเทอร์เน็ตเลย -->
+    <style>
+        :root {
+            /* โทนสี Pastel Green */
+            --bg-body: #eef7f0;       
+            --bg-card: #ffffff;       
+            --bg-input: #f9fcf9;      
+            --bg-stat: #e3f2e6;       
+            
+            --primary: #81c784;       
+            --primary-dark: #5e9c60;  
+            --primary-light: #a5d6a7; 
+            
+            --text-main: #2e4a31;     
+            --text-muted: #648267;    
+            --border-color: #c8e6c9;  
+            
+            --shadow-soft: 0 8px 30px rgba(129, 199, 132, 0.15);
+        }
+
+        /* ใช้ฟอนต์ระบบ (System Fonts) ที่มีอยู่ในเครื่องคอมพิวเตอร์ของคุณอยู่แล้ว */
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 800px;
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: var(--primary-dark);
+            font-size: 1.75rem;
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 220px;
+            padding: 1.25rem;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            font-size: 1.05rem;
+            color: var(--text-main);
+            background-color: var(--bg-input);
+            resize: vertical;
+            box-sizing: border-box;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(129, 199, 132, 0.2);
+            background-color: #ffffff;
+        }
+
+        textarea::placeholder {
+            color: #a3bea5;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-stat);
+            padding: 1.5rem 1rem;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(129, 199, 132, 0.2);
+            border-color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            line-height: 1;
+        }
+
+        .note {
+            margin-top: 2rem;
+            padding: 1rem 1.25rem;
+            background: #f4fbf5;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        
+        .note strong {
+            color: var(--primary-dark);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>AI Token Estimator (Offline)</h1>
+            <p>ระบบนับและประเมิน Token จบในตัว ไม่ต้องต่อเน็ต</p>
+        </div>
+
+        <div class="input-group">
+            <textarea id="inputText" placeholder="วางข้อความของคุณที่นี่..."></textarea>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">ตัวอักษรทั้งหมด</div>
+                <div class="stat-value" id="charCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">จำนวนคำ</div>
+                <div class="stat-value" id="wordCount">0</div>
+            </div>
+            <div class="stat-card" style="background: #d4edd7; border-color: #a5d6a7;">
+                <div class="stat-label" style="color: #437a45;">Token ที่ใช้ (ประมาณการ)</div>
+                <div class="stat-value" id="tokenCount">0</div>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>หมายเหตุ:</strong> โดยใช้การประเมินตามพฤติกรรมของ AI ทั่วไป (อังกฤษ 4 ตัวอักษร/Token, ไทย 1.5 ตัวอักษร/Token) 
+            จำนวนที่คำนวณได้ให้ เพิ่มอีก 10% บาง Model ใช้ไม่เท่ากัน
+        </div>
+    </div>
+
+    <script>
+        const inputText = document.getElementById('inputText');
+        const charCountDisplay = document.getElementById('charCount');
+        const wordCountDisplay = document.getElementById('wordCount');
+        const tokenCountDisplay = document.getElementById('tokenCount');
+
+        // ผูก Event เมื่อมีการพิมพ์
+        inputText.addEventListener('input', updateStats);
+
+        function updateStats() {
+            const text = inputText.value;
+            
+            // 1. นับจำนวนตัวอักษร
+            const chars = text.length;
+            charCountDisplay.textContent = chars.toLocaleString();
+
+            // 2. นับจำนวนคำ
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            wordCountDisplay.textContent = words.toLocaleString();
+
+            // 3. คำนวณ Token ด้วยตัวมันเอง (ไม่ต้องใช้ tokenizer.js)
+            let asciiCount = 0;
+            let nonAsciiCount = 0;
+
+            for (let i = 0; i < chars; i++) {
+                if (text.charCodeAt(i) <= 127) {
+                    asciiCount++;
+                } else {
+                    nonAsciiCount++;
+                }
+            }
+
+            // สูตรประเมิน
+            const estimatedTokens = Math.ceil((asciiCount / 4) + (nonAsciiCount / 1.5));
+            tokenCountDisplay.textContent = estimatedTokens.toLocaleString();
+        }
+    </script>
+</body>
+</html>

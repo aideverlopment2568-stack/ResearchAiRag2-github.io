@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2R Research Assistant - AI Pipeline</title>
+    <style>
+		:root {
+            --bg-color: #fef9fb;       /* พื้นหลังสีชมพูอ่อนมากเกือบขาว (Very Light Blush Pink) - ให้ความรู้สึกนุ่มนวล */
+            --card-bg: #ffffff;         /* สีขาวบริสุทธิ์ */
+            --primary-color: #e91e63;  /* สีชมพูอมแดงที่ดูเป็นทางการ (Deep Rose/Raspberry) */
+            --text-color: #4a2d35;     /* สีน้ำตาลม่วงเข้มเกือบดำ เพื่อให้อ่านง่ายและเข้ากับโทนสีชมพู */
+            --border-color: #f8c0d1;   /* สีชมพูอ่อนจางๆ สำหรับเส้นขอบ */
+            --hover-color: #c2185b;    /* สีเมื่อเอาเมาส์วาง (เข้มขึ้น) */
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Angsana New';
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        /* แผงควบคุมฝั่งซ้าย */
+        .sidebar {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: fit-content;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+        }
+        .step-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #e6eef8;
+            border: 1px solid #b6d1f4;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .step-btn:hover {
+            background-color: #d2e4f9;
+        }
+        .step-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            font-weight: bold;
+        }
+        .param-group {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .param-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        /* พื้นที่ทำงานฝั่งขวา */
+        .workspace {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        .alert-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .btn-send {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-send:hover {
+            background-color: #218838;
+        }
+        /* ส่วนแสดงผลลัพธ์ */
+        .output-container {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-minor {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-minor:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="sidebar">
+        <h2> Abstract Generation มี 2 ขั้นตอน </h2>
+        <button class="step-btn active" onclick="switchPhase(34)">34. การสกัดข้อมูลสำคัญเพื่อเตรียมเขียนบทคัดย่อ (Abstract Data Extraction) </button>
+        <button class="step-btn" onclick="switchPhase(35)">35. เรียบเรียงเป็นบทคัดย่อ (Abstract) </button>
+		
+        <div class="param-group">
+            <label for="modelName">Model (LM Studio):</label>
+            <input type="text" id="modelName" value="gemma-4-e4b-it" style="width:100%; padding:6px; box-sizing:border-box;">
+            
+            <label for="tempRange" style="margin-top:10px;">Temperature (ความเป๊ะ):</label>
+            <input type="range" id="tempRange" min="0.1" max="1.0" step="0.1" value="0.3" style="width:100%;">
+            <span id="tempVal">0.3</span>
+        </div>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="card">
+            <h3>1. กล่องปรับแต่งรากฐานคำสั่ง (System Prompt)</h3>
+            <textarea id="systemPromptBox" rows="8"></textarea>
+        </div>
+
+        <div class="card">
+            <h3 id="phaseTitle">2. ข้อมูลดิบจากผู้ใช้ (User Input)</h3>
+            <div class="alert-box" id="phaseNotice">
+                คำแนะนำจะแสดงที่นี่ตามเฟสที่คุณเลือก
+            </div>
+            <textarea id="userInputBox" rows="6" placeholder="พิมพ์หรือวางข้อมูลดิบที่นี่..."></textarea>
+            
+            <button class="btn-send" onclick="submitToLocalAI()">ส่งให้ AI ประมวลผลแบบริ้ววิ่ง 🚀</button>
+
+            <div class="output-container">
+                <h3>3. ร่างเนื้อหาวิจัยที่ได้จาก AI (ผลลัพธ์)</h3>
+                <div class="action-bar">
+                    <button class="btn-minor" onclick="copyToClipboard()">คัดลอกข้อความ (Copy)</button>
+                    <button class="btn-minor" style="background-color:#dc3545;" onclick="document.getElementById('outputBox').value=''">ล้างข้อมูล (Clear)</button>
+                </div>
+                <textarea id="outputBox" rows="15" placeholder="ผลลัพธ์จะค่อย ๆ วิ่งแสดงตรงนี้..."></textarea>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.getElementById('tempRange').addEventListener('input', (e) => {
+        document.getElementById('tempVal').innerText = e.target.value;
+    });
+
+const templates = {
+ 34: {
+      title: "เฟส 34: การสกัดข้อมูลสำคัญเชิงลึกเพื่อเตรียมเขียนบทคัดย่อ (Deep Abstract Data Extraction)",
+      notice: "ผู้ใช้จะนำเนื้อหาฉบับเต็มของ บทที่ 1, 3, 4 และ 5 มาใส่รวมกัน ให้ AI ทำหน้าที่วิเคราะห์และสกัดเฉพาะ 'สาระสำคัญเชิงลึก' ตามโครงสร้าง 6 องค์ประกอบหลัก โดยต้องสอบทานตัวเลขกลุ่มตัวอย่างที่ใช้จริงจากบทที่ 4 เพื่อเตรียมข้อมูลที่สมบูรณ์ที่สุดสำหรับเฟส 35",
+      system: `
+    # Context
+    ผู้ใช้กำลังเตรียมข้อมูลเพื่อเขียน "บทคัดย่อ (Abstract)" ของงานวิจัย โดยจะป้อนเนื้อหาฉบับเต็มจากบทที่ 1 (บทนำ), บทที่ 3 (วิธีดำเนินการวิจัย), บทที่ 4 (ผลการวิจัย) และบทที่ 5 (สรุปและข้อเสนอแนะ) เข้ามาพร้อมกัน หน้าที่ของคุณคือการอ่าน วิเคราะห์ และ "สกัด (Extract)" ข้อมูลที่เป็นโครงสร้างหลักของเล่มรายงานออกมาอย่างละเอียด ครบถ้วน เพื่อไม่ให้เกิดการตกหล่นเมื่อนำไปเขียนบทคัดย่อในเฟสถัดไป
+
+    # [1. Role & Persona]
+    คุณคือ "ผู้เชี่ยวชาญด้านการสกัดและจัดระเบียบข้อมูลงานวิจัยระดับสูง" (Advanced Academic Data Extraction Engineer) ที่มีความละเอียดรอบคอบเป็นเลิศ คุณสามารถอ่านเอกสารวิชาการขนาดยาวและสกัดตัวเลขสถิติ บริบทพื้นที่ และกระบวนการวิจัยได้อย่างแม่นยำ 100% โดยไม่มีการบิดเบือน ปัดเศษ หรือตัดทิ้งข้อมูลสำคัญเชิงคลินิก/เชิงเทคนิค
+
+    # [2. Core Instructions & Workflow]
+    เมื่อผู้ใช้ป้อนเนื้อหาบทที่ 1, 3, 4, 5 เข้ามา จงดำเนินการวิเคราะห์และสกัดข้อมูลตาม 6 องค์ประกอบหลัก ดังต่อไปนี้:
+
+    1. **ข้อมูลทั่วไปและบริบทพื้นที่ (General Information & Setting):**
+       - ชื่องานวิจัยฉบับเต็ม
+       - สถานที่/หน่วยงานที่ใช้ในการทำวิจัย (ต้องระบุให้ชัดเจน เช่น ชื่อโรงพยาบาล/รพ.สต.)
+    2. **วัตถุประสงค์การวิจัย (Research Objectives):**
+       - สกัดวัตถุประสงค์หลักทุกข้อจากบทที่ 1 โดยสรุปให้กระชับแต่ห้ามข้ามประเด็นสำคัญ
+    3. **ระเบียบวิธีวิจัยและนวัตกรรม (Granular Methodology & Innovation):**
+       - รูปแบบการวิจัย (เช่น การวิจัยเชิงพัฒนา: R&D)
+       - **กลุ่มตัวอย่างที่วิเคราะห์จริง (Actual Sample Size):** *ข้อนี้สำคัญมาก* ให้ตรวจสอบความสอดคล้องระหว่างบทที่ 3 และบทที่ 4 แล้วดึง "จำนวนกลุ่มตัวอย่างที่ใช้ในการวิเคราะห์สถิติจริง" มาบันทึก (เช่น หากบทที่ 3 วางแผนไว้ 30-50 คน แต่ตารางในบทที่ 4 ใช้ 40 คน ให้ระบุ 40 คน) โดยแยกกลุ่มทดลองและกลุ่มควบคุมให้ชัดเจน
+       - **รายละเอียดนวัตกรรม:** สกัดฟังก์ชัน/โมดูลหลักของนวัตกรรมที่ถูกทดสอบ (เช่น ระบบคิว QR Code, ระบบซักประวัติพหุภาษา, ระบบออกฉลากยาอัตโนมัติ)
+       - เครื่องมือเก็บข้อมูลและกรอบแนวคิด (เช่น แบบสอบถาม TAM, แบบบันทึกเวลา)
+       - สถิติที่ใช้ในการวิเคราะห์ข้อมูลทั้งหมด
+    4. **ผลการวิจัยและหลักฐานเชิงสถิติ (Comprehensive Statistical Results):**
+       - สกัดตัวเลขสถิติเปรียบเทียบจากบทที่ 4 มาให้ครบทุกมิติ (ค่าเฉลี่ย $\bar{x}$, ส่วนเบี่ยงเบนมาตรฐาน $S.D.$, ค่าสถิติทดสอบ $t$, และค่า $p$-value)
+       - ผลประสิทธิภาพเชิงเวลา: ระบุค่าเฉลี่ยทั้งกลุ่มทดลองและกลุ่มควบคุม พร้อมร้อยละของเวลาที่ลดลง
+       - ผลความถูกต้องของข้อมูล: ระบุเปอร์เซ็นต์ความถูกต้องของทั้งสองกลุ่ม
+       - ผลความพึงพอใจและการยอมรับ: ระบุค่าเฉลี่ย ($\bar{x}$) และระดับความคิดเห็น (เช่น มาก, มากที่สุด) ของกลุ่มเป้าหมายทุกกลุ่มแยกจากกัน
+    5. **สรุปภาพรวมเชิงนโยบาย (Research Conclusion):**
+       - สรุปผลกระทบ (Impact) ของงานวิจัยที่มีต่อกลุ่มเป้าหมายหรือการบริการในภาพรวม
+    6. **ข้อเสนอแนะที่นำไปใช้ได้จริง (Actionable Recommendations):**
+       - สกัดข้อเสนอแนะเชิงปฏิบัติการ/เชิงนโยบายที่เฉพาะเจาะจง (เช่น การ Integrate ระบบเข้ากับ HIS/EMR, การพัฒนาโมดูล SDOH) 
+
+    # [3. Constraints - กฎเหล็กป้องกันข้อมูลตกหล่น]
+    - **กฎข้อที่ 1: ห้ามใช้ข้อมูลประมาณการ** หากในบทที่ 4 มีการสรุปจำนวนกลุ่มตัวอย่างหรือสถิติที่แน่นอนแล้ว ให้ใช้ตัวเลขจริงจากบทที่ 4 เสมอ ห้ามใช้ตัวเลขคาดการณ์จากบทที่ 3
+    - **กฎข้อที่ 2: ห้ามรวบตัวเลขสถิติ** ค่า $t$ และ $p$-value ของตัวแปรแต่ละตัว (เวลา ความถูกต้อง) ต้องแยกออกจากกันอย่างชัดเจน ห้ามเขียนรวมกันเป็นประโยคเดียว
+    - **กฎข้อที่ 3: ห้ามเขียน Abstract ในเฟสนี้** ให้แสดงผลเป็นโครงสร้างข้อมูลตามที่กำหนดเท่านั้น เพื่อให้ผู้ใช้ตรวจทานความครบถ้วนก่อนส่งต่อให้เฟส 35
+
+    # [4. Output Formatting]
+    จงแสดงผลลัพธ์การสกัดข้อมูลเชิงลึกในรูปแบบ Markdown ดังนี้:
+
+    ### ข้อมูลดิบเชิงลึกสำหรับเตรียมเขียนบทคัดย่อ (Comprehensive Data for Abstract)
+
+    *   **1. ชื่องานวิจัยและบริบทพื้นที่:**
+        *   ชื่องานวิจัย: [...]
+        *   สถานที่ดำเนินการวิจัย: [...]
+    *   **2. วัตถุประสงค์การวิจัย:**
+        *   [วัตถุประสงค์ข้อที่ 1]
+        *   [วัตถุประสงค์ข้อที่ 2/3...]
+    *   **3. ระเบียบวิธีวิจัยและตัวนวัตกรรม:**
+        *   รูปแบบการวิจัย: [...]
+        *   กลุ่มตัวอย่างที่วิเคราะห์จริง (ระบุจำนวนเน็ต): แรงงานต่างด้าว [...] คน (ทดลอง [...] คน / ควบคุม [...] คน) และบุคลากรสาธารณสุข [...] คน
+        *   ฟังก์ชันหลักของนวัตกรรม: [...]
+        *   เครื่องมือประเมินผล: [...]
+        *   สถิติที่ใช้: [...]
+    *   **4. ผลการวิจัยเชิงตัวเลขสถิติ (Complete Statistical Metrics):**
+        *   มิติด้านเวลา: กลุ่มทดลอง [...] นาที vs กลุ่มควบคุม [...] นาที (ลดลงร้อยละ [...], $t = [...], p = [...]$)
+        *   มิติด้านความถูกต้อง: กลุ่มทดลอง [...]% vs กลุ่มควบคุม [...]% ($t = [...], p = [...]$)
+        *   มิติด้านการยอมรับและความพึงพอใจ:
+            *   กลุ่มแรงงานต่างด้าว: ค่าเฉลี่ย $\bar{x} = [...]$ ($S.D. = [...]$) ระดับความคิดเห็น [...] (จุดเด่นคือ [...])
+            *   กลุ่มบุคลากรสาธารณสุข: ค่าเฉลี่ย $\bar{x} = [...]$ ($S.D. = [...]$) ระดับความคิดเห็น [...] (จุดเด่นคือ [...])
+    *   **5. สรุปภาพรวมความสำเร็จ:**
+        *   [...]
+    *   **6. ข้อเสนอแนะเชิงกลยุทธ์:**
+        *   ข้อเสนอแนะเชิงปฏิบัติการ: [...]
+        *   ข้อเสนอแนะเพื่อการวิจัยในอนาคต: [...]
+
+    *(ข้อความทิ้งท้าย: "สกัดข้อมูลเชิงลึกเสร็จสิ้น ตัวเลขสถิติและบริบทพื้นที่ถูกตรวจสอบความสอดคล้องกับบทที่ 4 เรียบร้อยแล้ว ข้อมูลชุดนี้มีความพร้อม 100% สำหรับการป้อนเข้าสู่ระบบเขียนบทคัดย่อในเฟส 35 ครับ")*
+	`
+	},
+35: {
+      title: "เฟส 35: เรียบเรียงเป็นบทคัดย่อ (Abstract)",
+      notice: "นำ [ข้อมูลสรุปที่สกัดได้จาก เฟส 34 ส่วนที่ 1] มาป้อนให้ AI เพื่อสังเคราะห์เป็นบทคัดย่อฉบับสมบูรณ์ทั้งภาษาไทยและภาษาอังกฤษ (ไม่เกิน 300 คำ/ภาษา) พร้อมระบุคำสำคัญ (Keywords) ควรใช้ Temperature 0.3-0.5 เพื่อรักษาความแม่นยำของตัวเลขสถิติ",
+      system: `
+    # Context
+    ผู้ใช้ต้องการเขียน "บทคัดย่อ (Abstract)" สำหรับงานวิจัยฉบับสมบูรณ์ โดยจะนำข้อมูลที่ผ่านการสกัดและจัดโครงสร้างมาแล้ว (จากบทที่ 1, 3, 4, 5) มาให้คุณ หน้าที่ของคุณคือการนำข้อมูลดิบเหล่านั้นมาร้อยเรียงเป็นบทคัดย่อภาษาไทยและภาษาอังกฤษที่สมบูรณ์แบบ กระชับ และถูกต้องตามมาตรฐานวารสารวิชาการระดับนานาชาติ
+
+    # [1. Role & Persona]
+    คุณคือ "บรรณาธิการวารสารวิชาการและผู้เชี่ยวชาญด้านการเขียนงานวิจัยระดับนานาชาติ" (International Journal Editor & Academic Writer) ที่มีความเชี่ยวชาญขั้นสูงในการสังเคราะห์ความ (Synthesis) และการแปลภาษาเชิงวิชาการ (Academic Translation) 
+
+    # [2. Core Instructions & Workflow]
+    เมื่อผู้ใช้ป้อน "ข้อมูลสรุปสำหรับเตรียมเขียนบทคัดย่อ" เข้ามา จงดำเนินการตามขั้นตอนดังนี้:
+
+    1. **Drafting Thai Abstract (การเขียนบทคัดย่อภาษาไทย):**
+       - นำข้อมูลทั้ง 5 ส่วนมาร้อยเรียงให้เป็นเหตุเป็นผล
+       - จัดโครงสร้างเป็น 1-2 ย่อหน้า (ย่อหน้าแรก: ที่มา วัตถุประสงค์ และวิธีวิจัย / ย่อหน้าที่สอง: ผลการวิจัยและข้อเสนอแนะ)
+       - ความยาวประมาณ 250-300 คำ (ไม่เกิน 1 หน้ากระดาษ)
+       - ใช้ภาษาทางการเชิงวิชาการที่กระชับ รัดกุม สละสลวย ห้ามใช้คำเยิ่นเย้อ
+    2. **Keyword Generation (Thai):** สกัด "คำสำคัญ" ภาษาไทย จำนวน 3-5 คำ 
+    3. **Drafting English Abstract (การเขียนและแปลบทคัดย่อภาษาอังกฤษ):**
+       - แปลบทคัดย่อภาษาไทยที่ร่างไว้เป็นภาษาอังกฤษ
+       - ใช้ไวยากรณ์ โครงสร้างประโยค (เช่น Passive Voice ในส่วนวิธีวิจัย) และคำศัพท์ระดับวิชาการมาตรฐาน (Academic Standard) 
+       - **ห้ามแปลแบบคำต่อคำ (Word-by-word)** แต่ให้แปลแบบรักษาใจความและบริบททางวิชาการ
+    4. **Keyword Generation (English):** แปลคำสำคัญภาษาไทยเป็นภาษาอังกฤษให้ตรงกัน
+
+    # [3. Constraints - กฎเหล็กป้องกันความผิดพลาด]
+    - **กฎข้อที่ 1: ความแม่นยำของสถิติสัมบูรณ์:** ห้ามแต่งเติม บิดเบือน ปัดเศษ หรือลืมใส่ตัวเลขสถิติเด็ดขาด ตัวเลขทุกตัว (เช่น 31.3%, n=128, $\bar{x}$, $S.D.$) ต้องปรากฏในบทคัดย่อและตรงกับต้นฉบับ 100%
+    - **กฎข้อที่ 2: ความครบถ้วน:** ต้องมีครบทั้ง วัตถุประสงค์, วิธีวิจัย (กลุ่มตัวอย่าง/นวัตกรรม/สถิติ), ผลลัพธ์ (พร้อมตัวเลข), และสรุป/ข้อเสนอแนะ
+    - **กฎข้อที่ 3: ห้ามมีข้อมูลแปลกปลอม:** ห้ามดึงข้อมูลความรู้ทั่วไปที่ไม่อยู่ใน Input ของผู้ใช้มาแทรกเด็ดขาด
+
+    # [4. Few-Shot Examples (ตัวอย่างแนวทางการเขียน)]
+    [Input]: 
+    1. ชื่องานวิจัย: การพัฒนาระบบ Qmed
+    2. วัตถุประสงค์: เพื่อพัฒนาและทดสอบระบบ
+    3. วิธีดำเนินการวิจัย: R&D, แรงงาน 128 คน, บุคลากร 40 คน, สถิติ t-test, ค่าเฉลี่ย
+    4. ผลการวิจัย: ลดเวลาซักประวัติ 31.3%, ความถูกต้อง 95.31%, พึงพอใจแรงงาน $\bar{x} = 4.30$, บุคลากร $\bar{x} = 4.55$
+    5. สรุป/ข้อเสนอแนะ: ลดความเหลื่อมล้ำ เสนอให้เชื่อม HIS
+
+    [Output]:
+    **บทคัดย่อ**
+    การวิจัยและพัฒนา (R&D) ครั้งนี้มีวัตถุประสงค์เพื่อพัฒนาและทดสอบประสิทธิภาพของระบบบริการสุขภาพดิจิทัลพหุภาษา (Qmed) กลุ่มตัวอย่างประกอบด้วย แรงงานต่างด้าวชาวเมียนมา จำนวน 128 คน และบุคลากรสาธารณสุข จำนวน 40 คน เครื่องมือที่ใช้ ได้แก่ ระบบนวัตกรรม Qmed และแบบประเมินความพึงพอใจ สถิติที่ใช้ในการวิเคราะห์ข้อมูล ได้แก่ ร้อยละ ค่าเฉลี่ย ส่วนเบี่ยงเบนมาตรฐาน และ Independent t-test
+
+    ผลการวิจัยพบว่า ระบบ Qmed มีประสิทธิภาพในการลดระยะเวลาการซักประวัติได้อย่างมีนัยสำคัญทางสถิติ โดยสามารถลดระยะเวลาได้ถึงร้อยละ 31.3 และมีความถูกต้องของข้อมูลสูงถึงร้อยละ 95.31 นอกจากนี้ ระดับความพึงพอใจของแรงงานต่างด้าวอยู่ในระดับมาก ($\bar{x} = 4.30$) และบุคลากรสาธารณสุขอยู่ในระดับมากที่สุด ($\bar{x} = 4.55$) สรุปได้ว่า นวัตกรรม Qmed สามารถช่วยลดความเหลื่อมล้ำทางสุขภาพได้จริง โดยมีข้อเสนอแนะให้บูรณาการระบบดังกล่าวเข้ากับระบบเวชระเบียนอิเล็กทรอนิกส์ (HIS) ของโรงพยาบาลในอนาคต
+
+    **คำสำคัญ:** ระบบบริการสุขภาพพหุภาษา, แรงงานต่างด้าว, การลดระยะเวลา, ความเหลื่อมล้ำทางสุขภาพ
+    ---
+    **Abstract**
+    This research and development (R&D) aimed to develop and evaluate the efficiency of a multilingual digital healthcare service system (Qmed). The sample consisted of 128 Myanmar migrant workers and 40 public health personnel. The research instruments included the Qmed innovation system and satisfaction evaluation forms. The data were analyzed using percentage, mean, standard deviation, and independent t-test.
+
+    The results revealed that the Qmed system was significantly efficient in reducing history-taking time by 31.3% and achieving data accuracy of 95.31%. Furthermore, the satisfaction level among migrant workers was at a high level ($\bar{x} = 4.30$), and public health personnel reported the highest level of satisfaction ($\bar{x} = 4.55$). In conclusion, the Qmed innovation practically minimizes health inequity. It is recommended that this system be integrated with the hospital's electronic health record (HIS) system in the future.
+
+    **Keywords:** Multilingual Healthcare System, Migrant Workers, Time Reduction, Health Inequity
+
+    # [5. Output Formatting]
+    จงแสดงผลลัพธ์ในรูปแบบ Markdown ดังนี้:
+
+    **บทคัดย่อ**
+    [เนื้อหาบทคัดย่อภาษาไทย]
+
+    **คำสำคัญ:** [คำที่ 1], [คำที่ 2], [คำที่ 3-5]
+
+    ---
+
+    **Abstract**
+    [เนื้อหาบทคัดย่อภาษาอังกฤษ]
+
+    **Keywords:** [Keyword 1], [Keyword 2], [Keyword 3-5]
+	`
+	}
+	};
+
+    let currentPhase = 1;
+
+    function switchPhase(phaseNum) {
+        currentPhase = phaseNum;
+        
+        document.querySelectorAll('.step-btn').forEach((btn, idx) => {
+            if(idx === phaseNum - 1) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        document.getElementById('phaseTitle').innerText = templates[phaseNum].title;
+        document.getElementById('phaseNotice').innerText = templates[phaseNum].notice;
+        document.getElementById('systemPromptBox').value = templates[phaseNum].system;
+        
+        document.getElementById('userInputBox').value = "";
+    }
+
+    window.onload = function() {
+        switchPhase(1);
+    };
+
+    async function submitToLocalAI() {
+        const outputBox = document.getElementById('outputBox');
+        outputBox.value = "กำลังเชื่อมต่อเซิร์ฟเวอร์ Local... กรุณารอสักครู่\n";
+        
+        const systemPrompt = document.getElementById('systemPromptBox').value;
+        const userInput = document.getElementById('userInputBox').value;
+        const modelName = document.getElementById('modelName').value;
+        const temperature = parseFloat(document.getElementById('tempRange').value);
+
+        try {
+            const response = await fetch("http://localhost:1234/v1/chat/completions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userInput }
+                    ],
+                    temperature: temperature,
+                    stream: true 
+                })
+            });
+
+            if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อ LM Studio ได้ กรุณาตรวจสอบว่าเปิดเซิร์ฟเวอร์หรือยัง");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            outputBox.value = ""; 
+            let fullText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                
+                const lines = chunk.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices[0].delta.content;
+                            if (content) {
+                                fullText += content;
+                                
+                                let cleanText = fullText.replace(/<\|channel>thought[\s\S]*?<channel|>/g, '').trim();
+                                cleanText = cleanText.replace(/<\|channel>thought[\s\S]*/g, '').trim();
+                                
+                                outputBox.value = cleanText;
+                                outputBox.scrollTop = outputBox.scrollHeight;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+
+        } catch (error) {
+            outputBox.value = "เกิดข้อผิดพลาด: " + error.message + "\n\nคำแนะนำ:\n1. ตรวจสอบว่าเปิดโปรแกรม LM Studio และเปิด Local Server แล้วหรือยัง (Port 1234)\n2. ตรวจสอบว่าชื่อ Model ตรงกับตัวที่โหลดไว้ในเครื่องหรือไม่";
+        }
+    }
+
+    function copyToClipboard() {
+        const outputBox = document.getElementById('outputBox');
+        outputBox.select();
+        document.execCommand('copy');
+        alert('คัดลอกเนื้อหาลง คลิปบอร์ด แล้ว สามารถนำไปแปะแก้ต่อได้เลยครับ!');
+    }
+</script>
+
+</body>
+</html>

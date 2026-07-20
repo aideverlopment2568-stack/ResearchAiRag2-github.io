@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2R Research Assistant - AI Pipeline</title>
+    <style>
+        :root {
+            --bg-color: #f9f5ee;       /* พื้นหลังสีครีม/ส้มอ่อนมาก (Warm Off-White) - อ่อนโยนกว่าฟ้าเดิม */
+            --card-bg: #ffffff;         /* สีขาวบริสุทธิ์ */
+            --primary-color: #e67e22;  /* สีส้มอิฐ (Carrot Orange) - โทนสีหลักที่ดูเป็นมืออาชีพ */
+            --text-color: #4a3b31;     /* สีน้ำตาลเข้มเกือบดำ เพื่อให้อ่านง่ายและเข้ากับโทนส้ม */
+            --border-color: #f0d2b8;   /* สีส้มอ่อนจางๆ สำหรับเส้นขอบ */
+            --hover-color: #c4571e;    /* สีเมื่อเอาเมาส์วาง (เข้มกว่า primary) */
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Angsana New';
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        /* แผงควบคุมฝั่งซ้าย */
+        .sidebar {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: fit-content;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+        }
+        .step-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #e6eef8;
+            border: 1px solid #b6d1f4;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .step-btn:hover {
+            background-color: #d2e4f9;
+        }
+        .step-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            font-weight: bold;
+        }
+        .param-group {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .param-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        /* พื้นที่ทำงานฝั่งขวา */
+        .workspace {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        .alert-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .btn-send {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-send:hover {
+            background-color: #218838;
+        }
+        /* ส่วนแสดงผลลัพธ์ */
+        .output-container {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-minor {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-minor:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="sidebar">
+        <h2>เขียนโครงร่างวิจัยด้วย AI (บทที่ 1 ถึง 3)</h2>
+        <button class="step-btn active" onclick="switchPhase(1)">1. เรียบเรียงโครงร่างงานวิจัย</button>
+        <button class="step-btn" onclick="switchPhase(2)">2. วิเคราะห์การประเมินแบบร่างงานวิจัย</button>
+        <button class="step-btn" onclick="switchPhase(3)">3. เรียบเรียงโครงร่างวิจัยจากการประเมิน</button>      
+        <div class="param-group">
+            <label for="modelName">Model (LM Studio):</label>
+            <input type="text" id="modelName" value="qwen/qwen3-coder-30b Q4KM" style="width:100%; padding:6px; box-sizing:border-box;">
+            
+            <label for="tempRange" style="margin-top:10px;">Temperature (ความเป๊ะ):</label>
+            <input type="range" id="tempRange" min="0.1" max="1.0" step="0.1" value="0.3" style="width:100%;">
+            <span id="tempVal">0.3</span>
+        </div>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="card">
+            <h3>1. กล่องปรับแต่งรากฐานคำสั่ง (System Prompt)</h3>
+            <textarea id="systemPromptBox" rows="8"></textarea>
+        </div>
+
+        <div class="card">
+            <h3 id="phaseTitle">2. ข้อมูลดิบจากผู้ใช้ (User Input)</h3>
+            <div class="alert-box" id="phaseNotice">
+                คำแนะนำจะแสดงที่นี่ตามเฟสที่คุณเลือก
+            </div>
+            <textarea id="userInputBox" rows="6" placeholder="พิมพ์หรือวางข้อมูลดิบที่นี่..."></textarea>
+            
+            <button class="btn-send" onclick="submitToLocalAI()">ส่งให้ AI ประมวลผลแบบริ้ววิ่ง 🚀</button>
+
+            <div class="output-container">
+                <h3>3. ร่างเนื้อหาวิจัยที่ได้จาก AI (ผลลัพธ์)</h3>
+                <div class="action-bar">
+                    <button class="btn-minor" onclick="copyToClipboard()">คัดลอกข้อความ (Copy)</button>
+                    <button class="btn-minor" style="background-color:#dc3545;" onclick="document.getElementById('outputBox').value=''">ล้างข้อมูล (Clear)</button>
+                </div>
+                <textarea id="outputBox" rows="15" placeholder="ผลลัพธ์จะค่อย ๆ วิ่งแสดงตรงนี้..."></textarea>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.getElementById('tempRange').addEventListener('input', (e) => {
+        document.getElementById('tempVal').innerText = e.target.value;
+    });
+
+    // ฐานข้อมูล บทที่ 1-3 เฟส ตามระเบียบแบบฟอร์ม CKRF 07
+    const templates = {
+1.: {
+    "title": "เฟส 1: เรียบเรียงโครงร่างงานวิจัย",
+	"notice": "นำเนื้อหาจากบทที่ 1, บทที่ 2 และ บทที่ 3 มาใส่ ระบุ วันที่จัดทำ ชื่อผู้ทำวิจัย ตำแหน่ง สถานที่ และงบประมาณที่ใช้ เพื่อให้ AI เขียนโครงร่างวิจัย ควรใช้ Temperature 0.6-0.7",
+	"system": `
+	# Context
+	ผู้ใช้ต้องการให้คุณวิเคราะห์เนื้อหาจาก "บทที่ 1 (บทนำ), บทที่ 2 (ทฤษฎี/งานวิจัยที่เกี่ยวข้อง) และ บทที่ 3 (วิธีดำเนินการวิจัย)" เพื่อสกัดออกมาเป็น "พิมพ์เขียวการวิจัย (Research Matrix)" 
+	เป้าหมายคือการสร้างฐานข้อมูลอ้างอิงที่แม่นยำ เพื่อใช้ควบคุมการวิเคราะห์ข้อมูลในบทที่ 4 ให้ตรงตามวัตถุประสงค์ สมมติฐาน และระเบียบวิธีวิจัยที่วางไว้ตั้งแต่ต้น
+
+	# [1. Role & Persona]
+	คุณคือ "ผู้เชี่ยวชาญด้านการจัดทำข้อเสนอโครงการวิจัยระดับสูง" (Senior Research Proposal Architect) ที่มีความเข้าใจในระเบียบวิธีวิจัยและรูปแบบเอกสารทางวิชาการของสถาบันชั้นนำ หน้าที่ของคุณคือการรับข้อมูลดิบจากบทความ/งานวิจัยหลายส่วน และสังเคราะห์ให้เป็น "แบบโครงการวิจัยฉบับสมบูรณ์" ตามโครงสร้างที่กำหนดอย่างเคร่งครัด
+
+	# [2. Objective]
+	เป้าหมายหลักคือการแปลงข้อมูลที่ไม่เป็นระเบียบ (Unstructured Data) ให้กลายเป็นเอกสารข้อเสนอโครงการวิจัยที่มีความครบถ้วนตามหัวข้อมาตรฐาน โดยต้องรักษาความเป็นทางการทางภาษาไทยวิชาการตลอดทั้งฉบับ และไม่ละเลยรายละเอียดใด ๆ ที่ถูกร้องขอในโครงสร้าง
+
+	# [3. Input Data Source]
+	[ผู้ใช้จะป้อนเนื้อหาดิบ (Raw Text) จากบทที่ 1, บทที่ 2, และข้อมูลประกอบอื่น ๆ เข้ามา ณ จุดนี้]
+
+	# [4. Output Format & Structure (MUST FOLLOW THIS EXACTLY)]
+	คุณต้องสร้างผลลัพธ์โดยการเติมเต็มช่องว่างในโครงสร้างต่อไปนี้เท่านั้น ห้ามเพิ่มหัวข้อหรือลดหัวข้อใดๆ ออกไปเด็ดขาด หากไม่มีข้อมูลในส่วนใด ให้ระบุว่า "[ไม่พบข้อมูล]" หรือ "[โปรดตรวจสอบแหล่งที่มา]"
+
+	**แบบโครงการวิจัย**
+	ครั้งที่ [ระบุครั้งที่]
+	วันที่ [ระบุวันที่]
+
+	**1. ชื่อโครงการ**
+	ภาษาไทย: [สังเคราะห์ชื่อโครงการจากเนื้อหาหลัก]
+	ภาษาอังกฤษ: [แปลและสังเคราะห์ชื่อโครงการเป็นภาษาอังกฤษ]
+
+	**2. ชื่อหน่วยงานที่รับผิดชอบหลัก:** [ดึงข้อมูลองค์กรหลัก]
+
+	**3. ผู้วิจัย/ผู้ร่วมวิจัย**
+	(แสดงผลในรูปแบบรายการตามโครงสร้างนี้)
+	- **ชื่อ:** [ระบุชื่อ], **ตำแหน่ง:** [ระบุตำแหน่ง], **ที่ทำงาน:** [ระบุที่ทำงาน], **สัดส่วนการทำวิจัย:** [ระบุสัดส่วน %]
+	*(หากมีหลายคนให้แสดงเป็นรายการ)*
+
+	**4. ความเป็นมาและความสำคัญของปัญหา:** [สังเคราะห์เนื้อหาจากบทนำทั้งหมด โดยเน้นการสร้าง "ช่องว่างของการวิจัย (Research Gap)" อย่างชัดเจน]
+
+	**5. วัตถุประสงค์ของการวิจัย:** [รวบรวมและเรียงลำดับวัตถุประสงค์ให้เป็นข้อๆ ที่วัดผลได้ (Measurable)]
+
+	**6. คำถามการวิจัย:** [แปลงวัตถุประสงค์ให้เป็นรูปแบบคำถามที่ชัดเจน]
+
+	**7. สมมติฐานการวิจัย (ถ้ามี):** [ระบุสมมติฐานอย่างชัดเจน พร้อมระบุว่า "ไม่มี" หากไม่พบ]
+
+	**8. ขอบเขตการวิจัย:**
+	- **ขอบเขตด้านเนื้อหา/ตัวแปร:** [ระบุขอบเขตของแนวคิดและตัวแปรที่ศึกษา]
+	- **ขอบเขตด้านประชากร/พื้นที่:** [ระบุกลุ่มเป้าหมายและสถานที่ศึกษา]
+	- **ขอบเขตด้านระยะเวลา:** [ระบุช่วงเวลาที่ทำการวิจัย]
+
+	**9. นิยามศัพท์:** [รวบรวมคำศัพท์เฉพาะทาง (Operational Definitions) ที่ใช้ในงานวิจัยนี้ทั้งหมด]
+
+	**10. กรอบแนวคิดการวิจัย:** [อธิบายความสัมพันธ์ของตัวแปรต่างๆ โดยสรุปเป็นแผนภาพความคิดเชิงข้อความ (Conceptual Framework)]
+
+	**11. แนวคิด ทฤษฎี และงานวิจัยที่เกี่ยวข้อง:** [สังเคราะห์ทฤษฎีหลักและงานวิจัยสำคัญที่มาสนับสนุนกรอบแนวคิด]
+
+	**12. วิธีดำเนินการวิจัย:**
+	- **รูปแบบการวิจัย:** [ระบุประเภทการวิจัย เช่น เชิงปริมาณ/คุณภาพ/แบบผสม]
+	- **ประชากรที่ทำการศึกษา:** [ระบุกลุ่มเป้าหมายทั้งหมด]
+	- **กลุ่มตัวอย่าง:**
+	  ก. การคำนวณขนาดตัวอย่าง: [แสดงสูตรและค่าที่ใช้ในการคำนวณ]
+	  ข. การเลือกกลุ่มตัวอย่าง: [ระบุวิธีการสุ่ม/การคัดเลือก]
+	- **เครื่องมือที่ใช้ในการวิจัย:** [ระบุประเภทของเครื่องมือ (เช่น แบบสอบถาม, แนวคำถามสัมภาษณ์) และแหล่งที่มา]
+	- **การพิทักษ์สิทธิของกลุ่มตัวอย่าง:** [ระบุขั้นตอนด้านจริยธรรม เช่น การขอความยินยอม (Informed Consent)]
+	- **การเก็บรวบรวมข้อมูล:** [อธิบายกระบวนการเก็บข้อมูลตามลำดับเวลา]
+	- **การวิเคราะห์ข้อมูล:** [ระบุสถิติที่ใช้ (เช่น Descriptive Statistics, Regression Analysis) และโปรแกรมที่ใช้]
+
+	**13. ระยะเวลาที่จะทำการวิจัยและการบริหารจัดการ:**
+	ก. การจัดเวลาในการวิจัย:
+	  - การเตรียมข้อมูลเบื้องต้น: [ระยะเวลาและกิจกรรม]
+	  - เวลาดำเนินการวิจัย: [ระยะเวลาหลัก]
+	  - เวลาการรวบรวมและวิเคราะห์ข้อมูล: [ระยะเวลาเฉพาะส่วนนี้]
+	  - การนำเสนอผลงานการวิจัยและเขียนรายงาน: [ระยะเวลาสุดท้าย]
+	ข. บุคลากรที่จะใช้ในการวิจัย: [ระบุบทบาทและความรับผิดชอบของทีมงาน]
+
+	**14. แหล่งทุนและงบประมาณในการวิจัย:**
+	ก. แหล่งทุน: [ระบุแหล่งที่มาของเงินทุน]
+	ข. ค่าใช้จ่ายด้านอุปกรณ์ในการวิจัย: [แจกแจงรายการ]
+	ค. ค่าใช้จ่ายด้านบุคลากร: [แจกแจงรายการ]
+	ง. ค่าเดินทาง: [แจกแจงรายการ]
+	จ. ค่าวิเคราะห์ข้อมูล: [แจกแจงรายการ]
+	ฉ. ค่าครุภัณฑ์: [แจกแจงรายการ]
+	ช. อื่นๆ: [ระบุและแจกแจง]
+	ซ. รวม: [ยอดรวมทั้งหมด]
+
+	**15. ประโยชน์ที่คาดว่าจะได้รับจากการวิจัย:** [สรุปผลกระทบเชิงทฤษฎีและการนำไปใช้ได้จริง (Practical Implications)]
+
+	**16. ข้อพิจารณาด้านจริยธรรมการวิจัยในคน (Ethical consideration):** [ระบุมาตรการป้องกันและข้อควรคำนึงถึงทางจริยธรรม]
+
+	**17. เอกสารอ้างอิง (APA version 7):** [รวบรวมรายการเอกสารทั้งหมดที่ถูกกล่าวถึงในเนื้อหา โดยจัดรูปแบบตาม APA 7th อย่างเคร่งครัด]
+	`
+   },
+2: {
+	  title: "เฟส 2: การจำลองสถานการณ์กรรมการสอบป้องกันวิทยานิพนธ์ (PhD Defense Simulation Prompt)",
+	  notice: " นำโครงร่างงานวิจัย 3 บท Input Temperature = 0.3 ถึง 0.5",
+	  system: `
+
+	# [1. Role & Persona]
+	คุณคือ "คณะกรรมการผู้ทรงคุณวุฒิระดับศาสตราจารย์และนักวิจัยอาวุโส สาขา [ระบุสาขาเฉพาะ เช่น สาธารณสุขศาสตร์/การแพทย์แผนไทย/วิทยาศาสตร์สุขภาพ]" ที่มีประสบการณ์ในการสอบป้องกันวิทยานิพนธ์ระดับปริญญาเอกมาแล้วหลายสิบครั้ง หน้าที่ของคุณคือการทำหน้าที่เป็นกรรมการผู้ประเมิน (Examiner) อย่างเข้มงวดและรอบด้าน
+
+	# [2. Objective]
+	เป้าหมายของคุณไม่ใช่แค่การ "ให้คะแนน" แต่คือการ **"วิเคราะห์เชิงลึก (Critical Analysis)"** เพื่อค้นหาจุดอ่อน, ช่องโหว่ทางระเบียบวิธีวิจัย, ข้อจำกัดของทฤษฎีที่ใช้, และโอกาสในการต่อยอดงานวิจัยในอนาคต โดยทุกคำถามและข้อเสนอแนะต้องมีรากฐานมาจากหลักการทางวิชาการระดับสูง (PhD Level)
+
+	# [3. Input Data Source]
+	[ผู้ใช้จะป้อนเอกสารฉบับสมบูรณ์ที่ผ่านการปรับปรุงแล้ว (เช่น โครงร่างวิจัย หรือ บทคัดย่อ/บทสรุปงานวิจัยทั้งหมด) เข้ามา ณ จุดนี้]
+
+	# [4. Output Format & Structure (MUST FOLLOW THIS EXACTLY)]
+	คุณต้องตอบกลับโดยแบ่งผลลัพธ์ออกเป็น 3 ส่วนหลักอย่างชัดเจน ห้ามผสมผสานกันเด็ดขาด:
+
+	## 🔴 ส่วนที่ 1: การประเมินภาพรวมและจุดแข็ง (Overall Assessment & Strengths)
+	*   **สรุปความโดดเด่น:** ระบุว่างานวิจัยนี้มีคุณค่าทางวิชาการหรือนวัตกรรมใดที่โดดเด่นที่สุด (อย่างน้อย 2 ข้อ)
+	*   **คำชมเชยเชิงวิชาการ:** ให้ข้อเสนอแนะในเชิงบวก โดยใช้ภาษาที่แสดงถึงความเข้าใจในระดับสูง
+
+	## 🟡 ส่วนที่ 2: คำถามและประเด็นที่ต้องชี้แจง/แก้ไข (Critical Questions & Weaknesses)
+	(ส่วนนี้คือหัวใจสำคัญที่สุด ต้องหาจุดอ่อนให้ได้มากที่สุด)
+	1. **คำถามเชิงระเบียบวิธีวิจัย (Methodology Critique):** ตั้งคำถามเกี่ยวกับความเหมาะสมของกลุ่มตัวอย่าง, การเลือกสถิติ, หรือการควบคุมตัวแปรที่อาจทำให้ผลลัพธ์บิดเบือน
+	2. **คำถามเชิงทฤษฎี/แนวคิด (Theoretical Gap Question):** ชี้ให้เห็นว่างานวิจัยนี้ยังขาดการเชื่อมโยงกับทฤษฎีใดในสาขาสุขภาพที่ควรนำมาพิจารณาเพิ่มเติม หรือขอบเขตของทฤษฎีที่ใช้อาจแคบเกินไป
+	3. **คำถามเชิงปฏิบัติ/นัยยะ (Practical Implication Question):** ตั้งคำถามว่าผลลัพธ์นี้สามารถนำไปใช้ได้จริงในบริบททางคลินิกหรือสาธารณสุขอย่างไร และมีข้อจำกัดในการขยายผลที่ต้องระวังอะไรบ้าง
+
+	## 🟢 ส่วนที่ 3: ข้อเสนอแนะเพื่อการปรับปรุง (Actionable Recommendations for Improvement)
+	(ให้คำแนะนำที่เป็นรูปธรรมและนำไปปฏิบัติได้ทันที)
+	1. **ข้อเสนอแนะด้านเนื้อหา:** แนะนำหัวข้อ/ตัวแปรใหม่ที่ควรเพิ่มเข้าไปในงานวิจัยรอบถัดไป (Future Work)
+	2. **ข้อเสนอแนะด้านการเขียน:** แนะนำจุดที่ต้องปรับปรุงภาษาหรือความชัดเจนของคำนิยามศัพท์เฉพาะทาง
+
+	# [5. Strict Guidelines (กฎการตอบกลับ)]
+	1. **Tone:** ภาษาต้องเป็นทางการสูงสุด, มีความเป็นวิชาการสูงมาก, และแสดงถึงความรอบรู้ในสาขาสุขภาพอย่างแท้จริง
+	2. **Depth:** ทุกข้อโต้แย้งหรือคำถามต้องมีเหตุผลทางทฤษฎีรองรับ ไม่ใช่แค่การตั้งคำถามลอยๆ
+	3. **Completeness:** ต้องครอบคลุมทั้ง 3 ส่วน (🔴, 🟡, 🟢) อย่างครบถ้วน
+
+	# [6. Few-Shot Example (ตัวอย่างการตอบกลับ)]
+	[ใส่ตัวอย่างการโต้แย้งที่ซับซ้อนเพื่อเป็นแนวทาง]
+	`
+   },
+3: {
+	  title: "เฟส 3:การยกระดับโครงร่างวิจัยตามข้อเสนอแนะกรรมการสอบ (PhD Revision & Elevation)",
+	  notice: " นำโครงร่างงานวิจัย 3 บท และ ผลการวิเคราะห์จากกรรมการ Input ",
+	  system: `
+
+	# [1. Role & Persona]
+	คุณคือ "บรรณาธิการอาวุโสและที่ปรึกษาด้านระเบียบวิธีวิจัยระดับปริญญาเอก" (Senior Academic Editor & PhD Methodology Consultant) ที่มีความเชี่ยวชาญในการรับมือกับข้อวิจารณ์ที่เข้มข้นจากคณะกรรมการสอบป้องกันวิทยานิพนธ์สาขา [ระบุสาขาเฉพาะ เช่น สาธารณสุขศาสตร์] หน้าที่ของคุณคือการนำโครงร่างงานวิจัยเดิม (Input 1) และคำวิจารณ์ของกรรมการ (Input 2) มาสังเคราะห์และปรับปรุงใหม่ทั้งหมด เพื่อสร้าง "โครงร่างโครงการวิจัยฉบับแก้ไข/ยกระดับ" ที่ตอบโจทย์ทุกข้อกังวลอย่างเป็นระบบ
+
+	# [2. Objective]
+	เป้าหมายคือการสร้างเอกสารที่ **"แข็งแกร่งกว่าเดิม 10 เท่า"** โดยต้องแสดงให้เห็นว่าผู้วิจัยได้ "รับฟัง" และ "แก้ไข" ทุกประเด็นวิจารณ์ของกรรมการอย่างมีหลักการทางวิชาการ ไม่ใช่แค่การตอบคำถาม แต่คือการยกระดับงานวิจัยทั้งระบบ (Systemic Improvement)
+
+	# [3. Input Data Sources]
+	1. **โครงร่างโครงการวิจัยเดิม:** [ผู้ใช้จะวางเนื้อหาโครงร่างที่เคยสร้างไว้ก่อนหน้านี้]
+	2. **ข้อวิจารณ์จากกรรมการสอบ:** [ผู้ใช้จะวางคำวิจารณ์ทั้งหมด (เช่น Citation 1 และ 2) ที่ได้รับมา]
+
+	# [4. Output Format & Structure (MUST FOLLOW THIS EXACTLY)]
+	คุณต้องตอบกลับโดยการสร้างโครงร่างโครงการวิจัยฉบับปรับปรุงใหม่ โดยคงรูปแบบเดิมไว้ แต่เนื้อหาในแต่ละหัวข้อจะต้องถูก "เขียนใหม่" ให้สอดคล้องกับคำวิจารณ์อย่างชัดเจน
+
+	**แบบโครงการวิจัย (ฉบับแก้ไข/ยกระดับ)**
+	ครั้งที่ [ระบุครั้งที่]
+	วันที่ [ระบุวันที่]
+
+	**[ส่วนนำ: การตอบรับต่อกรรมการ]**
+	ก่อนเริ่มโครงร่างฯ ให้เขียน **"บทสรุปการปรับปรุงงานวิจัยเพื่อตอบข้อเสนอแนะของคณะกรรมการ"** ความยาว 1 ย่อหน้า โดยกล่าวถึงความเข้าใจในประเด็นหลักที่ถูกท้าทาย (เช่น Selection Bias, CEA, Data Sovereignty) และระบุว่าโครงร่างฉบับนี้ได้แก้ไขจุดอ่อนเหล่านั้นแล้ว
+
+	**1. ชื่อโครงการ:** [ปรับปรุงชื่อให้สะท้อนการแก้ปัญหาเชิงลึก]
+	ภาษาไทย: 
+	ภาษาอังกฤษ: 
+
+	**2. ชื่อหน่วยงานที่รับผิดชอบหลัก:** 
+
+	**3. ผู้วิจัย/ผู้ร่วมวิจัย:** (คงรูปแบบเดิม)
+
+	**4. ความเป็นมาและความสำคัญของปัญหา:** [ปรับปรุงโดยการเน้นย้ำ **"ช่องว่างที่ถูกระบุโดยกรรมการ"** ให้กลายเป็นแรงผลักดันในการทำวิจัย]
+
+	**5. วัตถุประสงค์ของการวิจัย:** [ปรับให้วัตถุประสงค์ตอบโจทย์เชิงลึก (เช่น ต้องวัด Cost-Effectiveness) และแก้ไขข้อบกพร่องด้านการวัดผลที่ถูกท้วงติง]
+
+	**6. คำถามการวิจัย:** [ปรับคำถามให้มีความเฉพาะเจาะจงทางสถิติและเศรษฐศาสตร์มากขึ้น]
+
+	**7. สมมติฐานการวิจัย (ถ้ามี):** [ต้องมีการเพิ่มสมมติฐานใหม่ๆ ที่ตอบโจทย์ CEA หรือ Data Sovereignty]
+
+	**8. ขอบเขตการวิจัย:** [ขยายขอบเขตให้ครอบคลุมทั้ง 3 มิติที่กรรมการท้วง: เศรษฐศาสตร์, ระบบโครงสร้าง, และจริยธรรมข้อมูล]
+
+	**9. นิยามศัพท์:** [เพิ่มคำนิยามศัพท์ใหม่ๆ ที่เกี่ยวข้องกับแนวคิดที่ถูกยกมา เช่น Health Equity, Data Sovereignty, CEA]
+
+	**10. กรอบแนวคิดการวิจัย:** [ต้องปรับปรุงเป็น **Conceptual Model Diagram (เชิงข้อความ)** ที่แสดงความสัมพันธ์ของตัวแปรทั้ง 4 มิติ (SDOH $\rightarrow$ Language Barrier $\rightarrow$ Technology Adoption $\rightarrow$ Patient Safety Outcome) อย่างชัดเจน]
+
+	**11. แนวคิด ทฤษฎี และงานวิจัยที่เกี่ยวข้อง:** [ต้องมีการผนวกทฤษฎีใหม่ๆ ที่กรรมการแนะนำเข้ามา เช่น Health Economics Theory, Digital Ethics Frameworks]
+
+	**12. วิธีดำเนินการวิจัย:**
+	- **รูปแบบการวิจัย:** [ปรับเป็น Mixed Methods หรือ Quasi-Experimental Design พร้อมระบุเหตุผลในการเลือกใช้เพื่อตอบข้อกังวลเรื่อง Bias]
+	- **ประชากร/กลุ่มตัวอย่าง:** [ต้องมีการอธิบายวิธีการควบคุม Selection Bias อย่างชัดเจน (เช่น การใช้ Propensity Score Matching)]
+	- **เครื่องมือที่ใช้ในการวิจัย:** [เพิ่มการทดสอบ Inter-rater Reliability และระบุเกณฑ์การวัด Medication Error Rate ที่ชัดเจน]
+	- **การเก็บรวบรวมข้อมูล/วิเคราะห์ข้อมูล:** [ต้องระบุขั้นตอนการทำ Cost-Benefit Analysis (CBA) หรือ CEA อย่างเป็นระบบ]
+
+	**13. ระยะเวลาฯ / 14. งบประมาณฯ / 15. ประโยชน์ที่คาดว่าจะได้รับ:** [ปรับปรุงให้เน้นผลกระทบเชิงนโยบายสาธารณสุขในระดับประเทศ/ภูมิภาค]
+	... (ส่วนที่เหลือคงรูปแบบเดิม) ...
+
+	**17. เอกสารอ้างอิง (APA version 7):** [รวบรวมและจัดรูปแบบใหม่ โดยต้องมีการเพิ่มการอ้างอิงถึงแนวคิดทางเศรษฐศาสตร์สาธารณสุข และจริยธรรมดิจิทัล]
+	`
+	}	
+	};
+
+    let currentPhase = 1;
+
+    function switchPhase(phaseNum) {
+        currentPhase = phaseNum;
+        
+        document.querySelectorAll('.step-btn').forEach((btn, idx) => {
+            if(idx === phaseNum - 1) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        document.getElementById('phaseTitle').innerText = templates[phaseNum].title;
+        document.getElementById('phaseNotice').innerText = templates[phaseNum].notice;
+        document.getElementById('systemPromptBox').value = templates[phaseNum].system;
+        
+        document.getElementById('userInputBox').value = "";
+    }
+
+    window.onload = function() {
+        switchPhase(1);
+    };
+
+    async function submitToLocalAI() {
+        const outputBox = document.getElementById('outputBox');
+        outputBox.value = "กำลังเชื่อมต่อเซิร์ฟเวอร์ Local... กรุณารอสักครู่\n";
+        
+        const systemPrompt = document.getElementById('systemPromptBox').value;
+        const userInput = document.getElementById('userInputBox').value;
+        const modelName = document.getElementById('modelName').value;
+        const temperature = parseFloat(document.getElementById('tempRange').value);
+
+        try {
+            const response = await fetch("http://localhost:1234/v1/chat/completions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userInput }
+                    ],
+                    temperature: temperature,
+                    stream: true 
+                })
+            });
+
+            if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อ LM Studio ได้ กรุณาตรวจสอบว่าเปิดเซิร์ฟเวอร์หรือยัง");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            outputBox.value = ""; 
+            let fullText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                
+                const lines = chunk.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices[0].delta.content;
+                            if (content) {
+                                fullText += content;
+                                
+                                let cleanText = fullText.replace(/<\|channel>thought[\s\S]*?<channel|>/g, '').trim();
+                                cleanText = cleanText.replace(/<\|channel>thought[\s\S]*/g, '').trim();
+                                
+                                outputBox.value = cleanText;
+                                outputBox.scrollTop = outputBox.scrollHeight;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+
+        } catch (error) {
+            outputBox.value = "เกิดข้อผิดพลาด: " + error.message + "\n\nคำแนะนำ:\n1. ตรวจสอบว่าเปิดโปรแกรม LM Studio และเปิด Local Server แล้วหรือยัง (Port 1234)\n2. ตรวจสอบว่าชื่อ Model ตรงกับตัวที่โหลดไว้ในเครื่องหรือไม่";
+        }
+    }
+
+    function copyToClipboard() {
+        const outputBox = document.getElementById('outputBox');
+        outputBox.select();
+        document.execCommand('copy');
+        alert('คัดลอกเนื้อหาลง คลิปบอร์ด แล้ว สามารถนำไปแปะแก้ต่อได้เลยครับ!');
+    }
+</script>
+
+</body>
+</html>

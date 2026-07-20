@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline R2R Mock Data Generator</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-color: #f1f5f9;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --success-hover: #059669;
+        }
+
+        body {
+            /* System fonts guarantee 100% offline rendering without internet */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 25px;
+            max-width: 1400px;
+            margin: 25px auto;
+            padding: 0 25px;
+        }
+
+        .sidebar {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            height: fit-content;
+        }
+
+        .sidebar h2 { font-size: 1.1rem; margin-top: 0; margin-bottom: 20px; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: bold; }
+        .form-control {
+            width: 100%; padding: 10px; border: 1px solid var(--border-color);
+            border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 0.95rem;
+        }
+        .form-control:focus { outline: none; border-color: var(--primary-color); }
+
+        .workspace { display: flex; flex-direction: column; gap: 20px; }
+        .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .card h3 { margin-top: 0; color: var(--text-main); font-size: 1.15rem; margin-bottom: 15px; }
+
+        textarea {
+            width: 100%; padding: 16px; border: 1px solid var(--border-color);
+            border-radius: 8px; font-size: 0.95rem; box-sizing: border-box; resize: vertical;
+            font-family: inherit; background-color: #fafafa;
+        }
+        textarea:focus { outline: none; border-color: var(--primary-color); background-color: #fff; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 12px 24px; border: none; border-radius: 8px; font-size: 1rem;
+            font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-send { background-color: var(--success-color); color: white; width: 100%; margin-top: 15px; }
+        .btn-send:hover { background-color: var(--success-hover); }
+        .btn-send:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+        .action-bar { display: flex; gap: 10px; margin-bottom: 10px; justify-content: flex-end;}
+        .btn-minor { background-color: white; color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; }
+        .btn-minor:hover { background-color: var(--secondary-color); }
+        
+        hr { border: 0; border-top: 1px dashed #ccc; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🔬 ระบบสร้างข้อมูลวิจัย (Mock Data) - Offline Mode</h1>
+</header>
+
+<div class="container">
+    <!-- แผงตั้งค่า (Sidebar) -->
+    <aside class="sidebar">
+        <h2>⚙️ การตั้งค่าระบบ (LM Studio)</h2>
+        
+        <div class="form-group">
+            <label>1. Model Name:</label>
+            <input type="text" id="modelName" class="form-control" value="gemma-4-e4b-it">
+        </div>
+        
+        <div class="form-group">
+            <label>2. API Endpoint (Local):</label>
+            <input type="text" id="apiUrl" class="form-control" value="http://localhost:1234/v1/chat/completions">
+        </div>
+
+        <div class="form-group">
+            <label>3. Temperature (ความสร้างสรรค์):</label>
+            <input type="range" id="tempRange" min="0.1" max="1.0" step="0.1" value="0.3" class="form-control" style="padding:0; border:none;">
+            <div id="tempVal" style="text-align:center; font-size:0.9rem; margin-top:5px; font-weight:bold;">0.3</div>
+        </div>
+
+        <hr>
+
+        <h2>📊 พารามิเตอร์ข้อมูล</h2>
+        <div class="form-group">
+            <label>จำนวนประชากร (n):</label>
+            <input type="number" id="sampleSize" class="form-control" value="128" min="1" max="5000">
+        </div>
+        <button class="btn btn-minor" onclick="updatePrompt()" style="width:100%; margin-top:10px;">🔄 อัปเดตคำสั่งตามค่า n</button>
+    </aside>
+
+    <!-- พื้นที่ทำงานหลัก (Workspace) -->
+    <main class="workspace">
+        <div class="card">
+            <h3>📑 คำสั่งควบคุม AI (System Prompt)</h3>
+            <textarea id="systemPromptBox" rows="3"></textarea>
+        </div>
+
+        <div class="card">
+            <h3>📝 โครงสร้างข้อมูลที่ต้องการ (User Prompt)</h3>
+            <textarea id="userInputBox" rows="8"></textarea>
+            
+            <button id="sendBtn" class="btn btn-send" onclick="submitToLocalAI()">
+                🚀 สั่งให้ AI สร้างตารางข้อมูล (Local Server)
+            </button>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin:0;">📥 ผลลัพธ์ข้อมูล (AI Output)</h3>
+                <div class="action-bar" style="margin:0;">
+                    <button class="btn btn-minor" onclick="copyToClipboard()">📋 คัดลอกตาราง</button>
+                    <button class="btn btn-minor" onclick="downloadCSV()">💾 โหลดเป็น CSV</button>
+                </div>
+            </div>
+            <textarea id="outputBox" rows="18" placeholder="ผลลัพธ์จาก AI จะค่อยๆ แสดงที่นี่แบบ Streaming..."></textarea>
+        </div>
+    </main>
+</div>
+
+<script>
+    // อัปเดตค่า Temperature บนหน้าจอ
+    document.getElementById('tempRange').addEventListener('input', (e) => {
+        document.getElementById('tempVal').innerText = parseFloat(e.target.value).toFixed(1);
+    });
+
+    // ฟังก์ชันสร้าง Prompt อัตโนมัติอิงตามจำนวน n
+    function updatePrompt() {
+        const n = document.getElementById('sampleSize').value;
+        const sysBox = document.getElementById('systemPromptBox');
+        const userBox = document.getElementById('userInputBox');
+        
+        sysBox.value = `คุณคือนักสถิติและผู้เชี่ยวชาญด้านข้อมูล หน้าที่ของคุณคือสร้างตารางข้อมูลสมมุติ (Mock Data) จำนวน ${n} แถว (Rows) เพื่อใช้ประมวลผลทางสถิติ ให้ผลลัพธ์เป็น Markdown Table เท่านั้น ห้ามพิมพ์คำอธิบายอื่นเพิ่มเติม`;
+        
+        userBox.value = `สร้างข้อมูลตารางจำนวน ${n} แถว ประกอบด้วยคอลัมน์ดังนี้:\n1. ID (เรียงลำดับ 1 ถึง ${n})\n2. Gender (ชาย/หญิง)\n3. Age (ช่วงอายุ 25-55 ปี)\n4. Pre_Score (คะแนนก่อนแก้ปัญหา สเกล 1-5 สุ่มให้อยู่ในช่วง 1-3)\n5. Post_Score (คะแนนหลังแก้ปัญหา สเกล 1-5 สุ่มให้อยู่ในช่วง 4-5)\n6. Time_Saved_Min (เวลาที่ประหยัดได้ต่อเคส สุ่มช่วง 10-30 นาที)\n\nโปรดพิมพ์เฉพาะตาราง Markdown เท่านั้น`;
+    }
+
+    // Initialize ครั้งแรก
+    window.onload = updatePrompt;
+
+    // ฟังก์ชันส่งข้อมูลเข้า LM Studio (Offline / Local)
+    async function submitToLocalAI() {
+        const outputBox = document.getElementById('outputBox');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = `⏳ กำลังประมวลผลและสร้างข้อมูล...`;
+        outputBox.value = "กำลังเชื่อมต่อเซิร์ฟเวอร์ Local (LM Studio)... กรุณารอสักครู่\n";
+        
+        const systemPrompt = document.getElementById('systemPromptBox').value;
+        const userInput = document.getElementById('userInputBox').value;
+        const modelName = document.getElementById('modelName').value;
+        const apiUrl = document.getElementById('apiUrl').value;
+        const temperature = parseFloat(document.getElementById('tempRange').value);
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userInput }
+                    ],
+                    temperature: temperature,
+                    stream: true // เปิดใช้งาน Streaming พิมพ์ทีละตัว
+                })
+            });
+
+            if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อได้ ตรวจสอบว่าเปิด LM Studio Local Server แล้วหรือยัง");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            outputBox.value = ""; 
+            let fullText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices[0]?.delta?.content;
+                            if (content) {
+                                fullText += content;
+                                outputBox.value = fullText;
+                                outputBox.scrollTop = outputBox.scrollHeight;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+
+        } catch (error) {
+            outputBox.value = "เกิดข้อผิดพลาด: " + error.message + "\n\nคำแนะนำ:\n1. เปิดโปรแกรม LM Studio\n2. ไปที่แท็บ Local Server\n3. กดปุ่ม Start Server\n4. ตรวจสอบว่าเปิดใช้งาน CORS ในตั้งค่า LM Studio แล้ว";
+        } finally {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = `🚀 สั่งให้ AI สร้างตารางข้อมูล (Local Server)`;
+        }
+    }
+
+    // ฟังก์ชันคัดลอกตาราง
+    function copyToClipboard() {
+        const outputBox = document.getElementById('outputBox');
+        if(!outputBox.value) { alert('ยังไม่มีข้อมูลตารางให้คัดลอกครับ'); return; }
+        outputBox.select();
+        document.execCommand('copy');
+        alert('คัดลอกตารางเรียบร้อย สามารถนำไปวางใน Excel หรือ Word ได้ทันที');
+    }
+
+    // ฟังก์ชันสร้างและดาวน์โหลดเป็นไฟล์ .CSV 
+    function downloadCSV() {
+        const text = document.getElementById('outputBox').value;
+        if(!text) { alert('ยังไม่มีข้อมูลสำหรับดาวน์โหลด'); return; }
+        
+        const lines = text.split('\n');
+        let csvContent = "";
+        
+        for(let line of lines) {
+            if(line.includes('|')) {
+                let row = line.replace(/^\s*\|/, '').replace(/\|\s*$/, '');
+                if(row.includes('---')) continue;
+                
+                let csvRow = row.split('|').map(cell => '"' + cell.trim() + '"').join(',');
+                csvContent += csvRow + "\r\n";
+            }
+        }
+        
+        if(!csvContent) {
+            alert('ไม่พบรูปแบบตารางในผลลัพธ์ กรุณาตรวจสอบข้อมูลอีกครั้ง');
+            return;
+        }
+
+        const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const n = document.getElementById('sampleSize').value;
+        link.download = `MockData_Research_n${n}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2R Research Assistant - AI Pipeline</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;       /* พื้นหลังสีฟ้าอ่อนมาก (Light Grayish Blue) - คล้ายกับที่ระบุมาแต่ให้ความรู้สึกสะอาดกว่า */
+            --card-bg: #ffffff;         /* สีขาวบริสุทธิ์ */
+            --primary-color: #2c7bb6;  /* สีน้ำเงินฟ้ามาตรฐานการแพทย์/องค์กร (Medical Blue) */
+            --text-color: #1d3557;     /* สีน้ำเงินเข้มเกือบดำ สำหรับตัวอักษร */
+            --border-color: #cfe2ff;   /* สีฟ้าอ่อนจางๆ สำหรับเส้นขอบ */
+            --hover-color: #1e5a96;    /* สีเมื่อเอาเมาส์วาง (Darker Blue) */
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Angsana New';
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        /* แผงควบคุมฝั่งซ้าย */
+        .sidebar {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: fit-content;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+        }
+        .step-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #e6eef8;
+            border: 1px solid #b6d1f4;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .step-btn:hover {
+            background-color: #d2e4f9;
+        }
+        .step-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            font-weight: bold;
+        }
+        .param-group {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .param-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        /* พื้นที่ทำงานฝั่งขวา */
+        .workspace {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        .alert-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .btn-send {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-send:hover {
+            background-color: #218838;
+        }
+        /* ส่วนแสดงผลลัพธ์ */
+        .output-container {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-minor {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-minor:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="sidebar">
+        <h2>เล่าเรื่องจากหน้างาน มี 4 ขั้นตอน </h2>
+        <button class="step-btn active" onclick="switchPhase(1)">1. การวิเคราะห์โครงสร้างปัญหา (House Model)</button>
+        <button class="step-btn" onclick="switchPhase(2)">2. การวิเคราะห์สาเหตุเชิงลึก (Root Cause Analysis - RCA)</button>		
+        <button class="step-btn" onclick="switchPhase(3)">3. การประเมินทางออกและช่องว่าง (SWOT & Gap Analysis)</button>
+        <button class="step-btn" onclick="switchPhase(4)">4. การเรียบเรียงงานเขียนวิชาการ (Academic Synthesis)</button>
+
+        <div class="param-group">
+            <label for="modelName">Model (LM Studio):</label>
+            <input type="text" id="modelName" value="gemma-4-e4b-it" style="width:100%; padding:6px; box-sizing:border-box;">
+            
+            <label for="tempRange" style="margin-top:10px;">Temperature (ความเป๊ะ):</label>
+            <input type="range" id="tempRange" min="0.1" max="1.0" step="0.1" value="0.3" style="width:100%;">
+            <span id="tempVal">0.3</span>
+        </div>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="card">
+            <h3>1. กล่องปรับแต่งรากฐานคำสั่ง (System Prompt)</h3>
+            <textarea id="systemPromptBox" rows="8"></textarea>
+        </div>
+
+        <div class="card">
+            <h3 id="phaseTitle">2. ข้อมูลดิบจากผู้ใช้ (User Input)</h3>
+            <div class="alert-box" id="phaseNotice">
+                คำแนะนำจะแสดงที่นี่ตามเฟสที่คุณเลือก
+            </div>
+            <textarea id="userInputBox" rows="6" placeholder="พิมพ์หรือวางข้อมูลดิบที่นี่..."></textarea>
+            
+            <button class="btn-send" onclick="submitToLocalAI()">ส่งให้ AI ประมวลผลแบบริ้ววิ่ง 🚀</button>
+
+            <div class="output-container">
+                <h3>3. ร่างเนื้อหาวิจัยที่ได้จาก AI (ผลลัพธ์)</h3>
+                <div class="action-bar">
+                    <button class="btn-minor" onclick="copyToClipboard()">คัดลอกข้อความ (Copy)</button>
+                    <button class="btn-minor" style="background-color:#dc3545;" onclick="document.getElementById('outputBox').value=''">ล้างข้อมูล (Clear)</button>
+                </div>
+                <textarea id="outputBox" rows="15" placeholder="ผลลัพธ์จะค่อย ๆ วิ่งแสดงตรงนี้..."></textarea>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.getElementById('tempRange').addEventListener('input', (e) => {
+        document.getElementById('tempVal').innerText = e.target.value;
+    });
+
+const templates = {
+  1: {
+      title: "เฟส 1: การสกัดบริบทและวิเคราะห์โครงสร้างปัญหา (Context Mapping & House Model)",
+      notice: "สกัดข้อมูล 5W1H/KPI และวิเคราะห์พิกัดรอยร้าวด้วย House Model (ตั้งค่า Temperature 0.1-0.2)",
+      system: `
+    # Context
+    ผู้ใช้จะป้อน "ข้อมูลดิบจากการสังเกตการณ์หน้างาน" (Raw Field Observation Data) เพื่อให้คุณทำหน้าที่ 2 ส่วนคือ 1) สกัดบริบทแวดล้อมที่สำคัญ และ 2) แปลงข้อมูลให้อยู่ในรูปแบบของ **'House Model'** เพื่อใช้เป็นข้อมูลสะสม (Context Accumulation) ในการทำ Root Cause Analysis (RCA) ในเฟสถัดไป
+
+    # [1. Role & Persona]
+    คุณคือ "วิศวกรระบบและผู้เชี่ยวชาญด้านการระบุปัญหา" (System Engineer & Problem Identification Expert) มีความสามารถในการอ่านจับใจความ สกัดข้อมูลบริบทอย่างแม่นยำ และจัดหมวดหมู่ความบกพร่องเชิงโครงสร้างได้อย่างเฉียบขาด
+
+    # [2. Core Instructions & Workflow]
+    1. **Analyze Input:** อ่านข้อมูลที่ผู้ใช้ป้อนอย่างละเอียด
+    2. **Extract Context:** สกัดข้อมูลบริบทแวดล้อม (5W1H, KPI, สถานการณ์) ออกมาให้ชัดเจน
+    3. **Map to House Model:** แยกแยะปัญหาตามโครงสร้าง 3 ส่วนของ House Model ได้แก่:
+       - Roof (หลังคา): ผลกระทบที่เกิดขึ้นกับผู้รับบริการ/ผู้ใช้งานปลายทาง
+       - Pillars (เสาบ้าน): ความบกพร่อง ซ้ำซ้อน หรือคอขวดในกระบวนการทำงาน/การจัดการ
+       - Foundation (รากฐาน): ข้อจำกัดด้านอุปกรณ์ เทคโนโลยี โครงสร้างพื้นฐาน หรือทรัพยากร
+    4. **Format Output:** สรุปข้อมูลลงในโครงสร้างที่กำหนดอย่างสั้น กระชับ เป็นประเด็นชัดเจน (Markdown List)
+
+    # [3. Constraints - กฎเหล็ก]
+    - **No Fabrication:** ห้ามสร้างข้อเท็จจริงใหม่ที่ไม่มีใน Input เด็ดขาด หากหัวข้อใดไม่มีข้อมูลระบุในเรื่องเล่า ให้เขียนว่า "[ไม่ระบุในข้อมูลดิบ]"
+    - **Strict Formatting:** ต้องตอบกลับตามโครงสร้างที่กำหนดเท่านั้น ห้ามเขียนความเรียงหรือย่อหน้าเกริ่นนำ/สรุปท้าย เพื่อให้ระบบอัตโนมัติดึงข้อมูลไปใช้ต่อได้ทันที
+    - **Conciseness:** เน้น Keyword และวลีที่เป็นรูปธรรม กระชับ ตรงประเด็น
+
+    # [4. Output Formatting]
+
+    ## ส่วนที่ 1: การสกัดบริบทแวดล้อม (Context Mapping)
+    * **Who (ผู้เกี่ยวข้อง/กลุ่มเป้าหมาย):** [ระบุผู้รับบริการหรือผู้ปฏิบัติงาน]
+    * **Where (สถานที่/หน่วยงาน):** [ระบุพื้นที่เกิดปัญหา]
+    * **What (ภารกิจหลัก):** [ระบุสิ่งที่กำลังพยายามทำ]
+    * **KPI / ข้อมูลสนับสนุน:** [ระบุตัวเลข สถิติ หรือสถานการณ์ความรุนแรงที่ปรากฏ]
+	* ** The Event (เกิดอะไรขึ้น): ปัญหาหรือรอยร้าวที่พบ [ระบุ ค่าผิดพลาด, ล่าช้า, ข้อมูลไม่เชื่อมโยงกัน]
+	* ** Policy   [ระบุ นโยบาย ระเบียบ พรบ.วิชาชีพที่เกี่ยวข้อง]
+	* ** คู่มือ วิชาการ   [ระบุ เรื่องที่เกี่ยวข้อง]
+
+    ## ส่วนที่ 2: โครงสร้างปัญหา (House Model Analysis)
+    **1. Roof (หลังคา) - ผลกระทบต่อผู้รับบริการ:**
+    * [ระบุผลกระทบข้อที่ 1]
+    * [ระบุผลกระทบข้อที่ 2]
+
+    **2. Pillars (เสาบ้าน) - ความบกพร่องของกระบวนการทำงาน:**
+    * [ระบุความบกพร่องของกระบวนการข้อที่ 1]
+    * [ระบุความบกพร่องของกระบวนการข้อที่ 2]
+
+    **3. Foundation (รากฐาน) - ข้อจำกัดของโครงสร้างพื้นฐาน/อุปกรณ์:**
+    * [ระบุข้อจำกัดข้อที่ 1]
+    * [ระบุข้อจำกัดข้อที่ 2]
+
+    **4. Core Symptom (สรุปอาการหลัก):**
+    * [สรุปปัญหาหลักที่พบ 1 ประโยค เพื่อส่งต่อไปทำ RCA]
+    `
+	},
+ 2: {
+      title: "เฟส 2: การวิเคราะห์สาเหตุเชิงลึก (Root Cause Analysis - RCA)",
+      notice: "ใช้เทคนิค 5 Whys เจาะลึกจาก Core Symptom เพื่อหารากเหง้าเชิงระบบ (ตั้งค่า Temperature 0.1-0.2)",
+      system: `
+    # Context
+    ผู้ใช้จะป้อนข้อมูลสะสมซึ่งประกอบด้วย 1) เรื่องเล่าหน้างานดิบ และ 2) ผลลัพธ์จากเฟส 1 (Context Mapping & House Model) เพื่อให้คุณทำหน้าที่วิเคราะห์หาสาเหตุรากฐานที่แท้จริง (Root Cause) ของปัญหาด้วยเทคนิค 5 Whys เพื่อใช้เป็นข้อมูลนำเข้าสำหรับเฟส 3 (SWOT) ต่อไป
+
+    # [1. Role & Persona]
+    คุณคือ "วิศวกรระบบและนักวิเคราะห์สาเหตุรากฐาน" (System Engineer & Root Cause Analyst) มีทักษะตรรกะศาสตร์ขั้นสูงในการเชื่อมโยงเหตุและผล สามารถมองทะลุอาการเปลือกนอก (Symptom) ลงไปถึงข้อจำกัดเชิงเทคนิค กระบวนการ หรือโครงสร้างพื้นฐานได้
+
+    # [2. Core Instructions & Workflow]
+    1. **Analyze Input:** อ่านข้อมูลสะสมทั้งหมดอย่างละเอียดเพื่อทำความเข้าใจบริบทและพิกัดรอยร้าว
+    2. **Set the Starting Point:** ดึงข้อมูลจาก "4. Core Symptom (สรุปอาการหลัก)" ในเฟส 1 มาตั้งเป็น "ปัญหาตั้งต้น (Problem Statement)" 
+    3. **Execute 5 Whys:** ทำการตั้งคำถาม "ทำไม?" 5 ครั้งอย่างเป็นเหตุเป็นผล โดย:
+       - คำตอบของ Why ข้อก่อนหน้า จะต้องกลายเป็นคำถามของ Why ข้อถัดไป
+       - เจาะลึกจากปัญหาหน้างาน (Roof/Pillars) ลงไปสู่ข้อจำกัดด้านเครื่องมือ เทคโนโลยี หรือโครงสร้างพื้นฐาน (Foundation)
+    4. **Synthesize Root Cause:** สรุปรากเหง้าที่ลึกที่สุดที่สามารถแก้ไขได้ด้วยการสร้างนวัตกรรมหรือปรับปรุงระบบ
+
+    # [3. Constraints - กฎเหล็ก]
+    - **Logical Chain (ตรรกะลูกโซ่):** การถาม-ตอบ 5 Whys ต้องมีความเชื่อมโยงกันอย่างสมเหตุสมผลและอ้างอิงจากข้อมูลสะสมเท่านั้น ห้ามเดาหรือสร้างบริบทใหม่
+    - **No Blame Game (ไม่โทษบุคคล):** ห้ามสรุปสาเหตุว่าเกิดจากความประมาท ขี้เกียจ หรือความผิดส่วนบุคคลของเจ้าหน้าที่ แต่ให้มุ่งเน้นไปที่ "ข้อบกพร่องของระบบ/เครื่องมือ" ที่ทำให้เจ้าหน้าที่ทำงานลำบาก
+    - **Strict Formatting:** ต้องตอบกลับตามโครงสร้าง Markdown ที่กำหนดเท่านั้น ห้ามมีน้ำ ห้ามเกริ่นนำ ห้ามสรุปปิดท้าย
+
+    # [4. Output Formatting]
+
+    ## การวิเคราะห์สาเหตุเชิงลึก (Root Cause Analysis: 5 Whys)
+
+    **Problem Statement (ปัญหาตั้งต้น):** [ดึงข้อมูล Core Symptom จากเฟส 1 มาวางตรงนี้]
+
+    * **Why 1:** ทำไม [Problem Statement] จึงเกิดขึ้น?
+      * **Because:** เพราะ [ระบุเหตุผลชั้นที่ 1 - มักเป็นปัญหาเชิงกระบวนการ/Pillars]
+    * **Why 2:** ทำไม [คำตอบจาก Because 1] จึงเกิดขึ้น?
+      * **Because:** เพราะ [ระบุเหตุผลชั้นที่ 2]
+    * **Why 3:** ทำไม [คำตอบจาก Because 2] จึงเกิดขึ้น?
+      * **Because:** เพราะ [ระบุเหตุผลชั้นที่ 3]
+    * **Why 4:** ทำไม [คำตอบจาก Because 3] จึงเกิดขึ้น?
+      * **Because:** เพราะ [ระบุเหตุผลชั้นที่ 4 - เริ่มเข้าสู่ข้อจำกัดเชิงระบบ]
+    * **Why 5:** ทำไม [คำตอบจาก Because 4] จึงเกิดขึ้น?
+      * **Because:** เพราะ [ระบุเหตุผลชั้นที่ 5 - ข้อจำกัดด้านโครงสร้างพื้นฐาน/เทคโนโลยี (Foundation)]
+
+    **Root Cause (สรุปรากเหง้าของปัญหา):**
+    * [สรุปสาเหตุรากฐานที่แท้จริง 1-2 ประโยค เพื่อนำไปใช้เป็นจุดตั้งต้นในการคิดค้นทางออก (SWOT) ในเฟสถัดไป]
+    `
+	},
+3: {
+      title: "เฟส 3: การประเมินทางออกและช่องว่าง (SWOT & Gap Analysis)",
+      notice: "ประเมินสภาพแวดล้อมเพื่อกำหนดทิศทางนวัตกรรมจากสาเหตุรากฐาน (ตั้งค่า Temperature 0.3-0.4)",
+      system: `
+    # Context
+    ผู้ใช้จะป้อน "ข้อมูลสะสม" ซึ่งประกอบด้วย 1) เรื่องเล่าหน้างาน 2) โครงสร้างปัญหา (House Model) และ 3) สาเหตุรากฐาน (Root Cause) เพื่อให้คุณทำหน้าที่ประเมินความเป็นไปได้และข้อจำกัดในการแก้ปัญหา เพื่อกำหนดทิศทางในการสร้างนวัตกรรมที่เหมาะสมที่สุด
+
+    # [1. Role & Persona]
+    คุณคือ "นักกลยุทธ์นวัตกรรมและนักพัฒนาระบบ" (Innovation Strategist & System Developer) มีวิสัยทัศน์ในการบูรณาการเทคโนโลยีเข้ากับบริบทการทำงานจริง สามารถประเมินความเสี่ยงและมองเห็นช่องทางในการแก้ปัญหาอย่างคุ้มค่าและยั่งยืน
+
+    # [2. Core Instructions & Workflow]
+    1. **Analyze Input:** ตรวจสอบข้อมูลสะสมทั้งหมด โดยให้ความสำคัญสูงสุดกับ "Root Cause" จากเฟส 2
+    2. **Execute SWOT Analysis:** ประเมินสภาพแวดล้อมที่เกี่ยวข้องกับการแก้ปัญหานี้ โดยพิจารณา:
+       - Strengths: ต้นทุนเดิมที่มีอยู่ (เช่น ข้อมูลที่มีอยู่แล้ว, อุปกรณ์พื้นฐาน)
+       - Weaknesses: ข้อจำกัดภายใน (เช่น งบประมาณ, ทักษะบุคลากร, เวลา)
+       - Opportunities: โอกาสภายนอก (เช่น เทคโนโลยีที่เข้าถึงง่าย, ซอฟต์แวร์แบบ Open Source, นโยบายรัฐ)
+       - Threats: อุปสรรค/ความท้าทาย (เช่น ความปลอดภัยของข้อมูล, ความเสถียรของระบบเครือข่าย)
+    3. **Identify the Gap:** ระบุช่องว่างระหว่าง "ระบบที่เป็นอยู่ในปัจจุบัน" กับ "สิ่งที่ควรจะเป็น"
+    4. **Propose Solution:** สรุปแนวทางการพัฒนานวัตกรรม (Proposed Solution) ที่ตอบโจทย์ Root Cause อุดช่องว่าง (Gap) และสอดคล้องกับผลการวิเคราะห์ SWOT
+
+    # [3. Constraints - กฎเหล็ก]
+    - **Feasibility (ความเป็นไปได้):** นวัตกรรมที่เสนอต้องตั้งอยู่บนพื้นฐานของเทคโนโลยีที่เข้าถึงได้จริง ไม่ล้ำยุคจนเกินไปหรือใช้งบประมาณมหาศาลเกินบริบทของหน่วยงาน
+    - **Alignment (ความสอดคล้อง):** ทางออกต้องแก้ปัญหาที่ Root Cause โดยตรง ไม่ใช่แค่แก้ที่อาการ (Symptom)
+    - **Strict Formatting:** ต้องตอบกลับตามโครงสร้าง Markdown ที่กำหนดเท่านั้น สั้น กระชับ เป็นรูปธรรม ห้ามมีข้อความบรรยายฟุ่มเฟือย
+
+    # [4. Output Formatting]
+
+    ## การประเมินทางออกและช่องว่าง (SWOT & Gap Analysis)
+
+    **1. Root Cause Anchor (รากเหง้าของปัญหาตั้งต้น):** 
+    * [ดึงข้อมูล Root Cause จากเฟส 2 มาวางเพื่อกำหนดเป้าหมาย]
+
+    **2. SWOT Analysis (การประเมินสภาพแวดล้อม):**
+    * **Strengths (จุดแข็ง/ต้นทุนเดิม):** [ระบุ 1-2 ข้อ]
+    * **Weaknesses (จุดอ่อน/ข้อจำกัดภายใน):** [ระบุ 1-2 ข้อ]
+    * **Opportunities (โอกาส/เทคโนโลยีที่นำมาประยุกต์ได้):** [ระบุ 1-2 ข้อ เช่น การใช้ไมโครคอนโทรลเลอร์, แชทบอท, คลาวด์]
+    * **Threats (อุปสรรค/ความท้าทาย):** [ระบุ 1-2 ข้อ]
+
+    **3. Gap Analysis (ช่องว่างการพัฒนา):**
+    * **Current State (สิ่งที่เป็นอยู่):** [ระบบเดิมทำงานอย่างไร/มีข้อจำกัดอย่างไร]
+    * **Desired State (สิ่งที่ควรจะเป็น):** [ระบบใหม่ควรทำอะไรได้บ้างเพื่อแก้ Root Cause]
+    * **The Gap (ช่องว่างที่ต้องเติมเต็ม):** [สิ่งที่ขาดหายไปและต้องสร้างขึ้นมาเชื่อมต่อ]
+
+    **4. Proposed Solution (กรอบแนวทางการพัฒนานวัตกรรม):**
+    * [สรุปแนวทางแก้ไขที่ดีที่สุด 1-2 ประโยค ระบุให้ชัดเจนว่าคือระบบ/นวัตกรรมอะไร ทำงานหลักๆ อย่างไร เพื่อนำไปร้อยเรียงในเฟสสุดท้าย]
+	
+	**5.Proposed Innovation (นวัตกรรมที่นำเสนอ):**
+    * [ระบุชื่อหรือรูปแบบของนวัตกรรม/ระบบอย่างย่อ เช่น "การพัฒนาระบบดิจิทัลถามตอบ"]
+    * **กลไกการทำงานหลัก:** [อธิบายสั้นๆ ว่าระบบนี้ทำงานอย่างไรเพื่อแก้ Root Cause]
+
+    **SWOT Analysis (การประเมินความเป็นไปได้):**
+    * **S - Strengths (จุดแข็ง):** 
+      * [ระบุจุดแข็งข้อ 1]
+      * [ระบุจุดแข็งข้อ 2]
+    * **W - Weaknesses (จุดอ่อน):**
+      * [ระบุจุดอ่อน/ข้อจำกัดข้อ 1]
+    * **O - Opportunities (โอกาส):**
+      * [ระบุโอกาส/ปัจจัยสนับสนุนข้อ 1]
+    * **T - Threats (อุปสรรค):**
+      * [ระบุความท้าทาย/ความเสี่ยงข้อ 1]
+
+    **Research Gap (ช่องว่างที่นวัตกรรมจะเติมเต็ม):**
+    * [สรุป 1-2 ประโยค ว่าการสร้างสิ่งนี้จะเปลี่ยนจาก "สถานการณ์ที่เป็นปัญหา" ไปสู่ "เป้าหมายที่ควรจะเป็น" ได้อย่างไร ซึ่งจะเป็นแกนหลักของการเขียนรายงานวิจัย]
+    `
+	},
+4: {
+      title: "เฟส 4: การเรียบเรียงงานเขียนวิชาการเชิงกลยุทธ์ (Academic & Executive Synthesis)",
+      notice: "สังเคราะห์ข้อมูลทั้งหมดเป็นความเป็นมาของปัญหา (4 ย่อหน้า), ตั้งชื่อเรื่อง, ระบุประเภทวิจัย และประเมินความเป็นไปได้ (Temperature 0.5-0.6)",
+      system: `
+    # Context
+    ผู้ใช้จะป้อน "ข้อมูลสะสมขั้นสุดท้าย" ซึ่งประกอบด้วย 1) เรื่องเล่าหน้างานดิบ 2) House Model 3) RCA (5 Whys) และ 4) SWOT & Gap Analysis เพื่อให้คุณนำข้อมูลเชิงตรรกะทั้งหมดมาร้อยเรียงเป็นความเรียงวิชาการฉบับสมบูรณ์ พร้อมสรุปข้อมูลสำคัญเพื่อนำเสนอผู้บริหารและใช้เป็นจุดเริ่มต้นของโครงร่างการวิจัย
+
+    # [1. Role & Persona]
+    คุณคือ "นักวิจัยระดับสูงและที่ปรึกษาเชิงกลยุทธ์" (Senior Researcher & Strategic Advisor) มีความเชี่ยวชาญในการเขียนภาษาทางการ (Academic Tone) มีทักษะในการโน้มน้าวใจด้วยเหตุผล และสามารถสรุปประเด็นที่ซับซ้อนให้ผู้บริหารเข้าใจวิสัยทัศน์ของนวัตกรรมได้อย่างรวดเร็ว
+
+    # [2. Core Instructions & Workflow]
+    1. **Analyze Input:** ประมวลผลตรรกะความเชื่อมโยงจากเฟส 1 ถึง 3 ทั้งหมด
+    2. **Define Project Basics:** จากทางออกที่เสนอ (Proposed Solution) ให้วิเคราะห์และกำหนด "ชื่อเรื่องวิจัย" ตามหลักวิชาการ และระบุ "ประเภทของการวิจัย" (เช่น การวิจัยและพัฒนา R&D, การวิจัยเชิงปฏิบัติการ Action Research, การวิจัยเชิงประยุกต์ Applied Research)
+    3. **Executive Feasibility:** เขียนวิเคราะห์ความเป็นไปได้ของโครงการ (Feasibility) โดยดึงจุดแข็งและโอกาสจาก SWOT มาสนับสนุนว่าทำไมโครงการนี้จึงคุ้มค่าและทำได้จริง
+    4. **Academic Synthesis (4 Paragraphs):** ร้อยเรียงข้อมูลเป็น "ความเป็นมาและความสำคัญของปัญหา" จำนวน 4 ย่อหน้า โดยยึดโครงสร้างดังนี้:
+       - ย่อหน้า 1: เกริ่นนำบริบททั่วไป ภารกิจหลัก และเป้าหมาย (ดึงจาก Context Mapping)
+       - ย่อหน้า 2: ปัญหาที่เกิดขึ้นหน้างานและผลกระทบ (ดึงจาก House Model - Roof & Pillars)
+       - ย่อหน้า 3: สาเหตุรากฐานที่แท้จริงและช่องว่างของระบบ (ดึงจาก RCA และ Gap Analysis)
+       - ย่อหน้า 4: แนวทางการแก้ไขด้วยนวัตกรรมและประโยชน์ที่จะได้รับ (ดึงจาก Proposed Solution)
+
+    # [3. Constraints - กฎเหล็ก]
+    - **No Fabrication:** ห้ามสร้างข้อเท็จจริง ตัวเลข หรือสถิติใหม่เพิ่มเติมเด็ดขาด ให้ใช้ตรรกะความเชื่อมโยงจากข้อมูลสะสมเท่านั้น
+    - **Academic Tone:** ภาษาต้องเป็นทางการ สละสลวย ใช้คำเชื่อมที่แสดงความเป็นเหตุเป็นผล (เช่น อย่างไรก็ตาม, ดังนั้น, ด้วยเหตุนี้)
+    - **Strict Formatting:** ต้องแสดงผลลัพธ์ตามหัวข้อที่กำหนด เพื่อให้ผู้ใช้สามารถคัดลอกไปวางในเอกสารโครงร่างวิจัยได้ทันที
+
+    # [4. Output Formatting]
+
+    ## รายงานสังเคราะห์เพื่อการวิจัยและการบริหาร (Academic & Executive Synthesis)
+
+    **1. ชื่อโครงการวิจัยที่นำเสนอ (Proposed Academic Title):**
+    * (ภาษาไทย) [เสนอชื่อเรื่องที่ครอบคลุมนวัตกรรมและเป้าหมาย 1-2 ชื่อ]
+    * (ภาษาอังกฤษ) [แปลชื่อเรื่องเป็นภาษาอังกฤษที่สอดคล้องกัน]
+
+    **2. ประเภทของการวิจัย (Research Type):**
+    * [ระบุประเภทวิจัย พร้อมเหตุผลสั้นๆ 1 ประโยคว่าทำไมจึงจัดเป็นประเภทนี้]
+
+    **3. บทสรุปความเป็นไปได้สำหรับผู้บริหาร (Executive Feasibility Summary):**
+    * [เขียนอธิบาย 2-3 ประโยคว่า แนวทางแก้ปัญหานี้มีความเป็นไปได้ทางปฏิบัติอย่างไร มีต้นทุน/ทรัพยากรรองรับอย่างไร และจะคุ้มค่าต่อการลงทุน/พัฒนาอย่างไร (อิงจาก SWOT)]
+
+    **4. ความเป็นมาและความสำคัญของปัญหา (Background and Significance):**
+    [ย่อหน้าที่ 1: บริบทและความสำคัญของหน่วยงาน/ภารกิจ]
+    [ย่อหน้าที่ 2: สถานการณ์ปัญหาที่พบและผลกระทบต่อผู้รับบริการ]
+    [ย่อหน้าที่ 3: การวิเคราะห์สาเหตุรากฐานและช่องว่างของระบบในปัจจุบัน]
+    [ย่อหน้าที่ 4: ข้อเสนอในการพัฒนานวัตกรรมเพื่ออุดช่องว่างและยกระดับการให้บริการ]
+    `
+	}
+	};
+
+    let currentPhase = 1;
+
+    function switchPhase(phaseNum) {
+        currentPhase = phaseNum;
+        
+        document.querySelectorAll('.step-btn').forEach((btn, idx) => {
+            if(idx === phaseNum - 1) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        document.getElementById('phaseTitle').innerText = templates[phaseNum].title;
+        document.getElementById('phaseNotice').innerText = templates[phaseNum].notice;
+        document.getElementById('systemPromptBox').value = templates[phaseNum].system;
+        
+        document.getElementById('userInputBox').value = "";
+    }
+
+    window.onload = function() {
+        switchPhase(1);
+    };
+
+    async function submitToLocalAI() {
+        const outputBox = document.getElementById('outputBox');
+        outputBox.value = "กำลังเชื่อมต่อเซิร์ฟเวอร์ Local... กรุณารอสักครู่\n";
+        
+        const systemPrompt = document.getElementById('systemPromptBox').value;
+        const userInput = document.getElementById('userInputBox').value;
+        const modelName = document.getElementById('modelName').value;
+        const temperature = parseFloat(document.getElementById('tempRange').value);
+
+        try {
+            const response = await fetch("http://localhost:1234/v1/chat/completions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userInput }
+                    ],
+                    temperature: temperature,
+                    stream: true 
+                })
+            });
+
+            if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อ LM Studio ได้ กรุณาตรวจสอบว่าเปิดเซิร์ฟเวอร์หรือยัง");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            outputBox.value = ""; 
+            let fullText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                
+                const lines = chunk.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices[0].delta.content;
+                            if (content) {
+                                fullText += content;
+                                
+                                let cleanText = fullText.replace(/<\|channel>thought[\s\S]*?<channel|>/g, '').trim();
+                                cleanText = cleanText.replace(/<\|channel>thought[\s\S]*/g, '').trim();
+                                
+                                outputBox.value = cleanText;
+                                outputBox.scrollTop = outputBox.scrollHeight;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+
+        } catch (error) {
+            outputBox.value = "เกิดข้อผิดพลาด: " + error.message + "\n\nคำแนะนำ:\n1. ตรวจสอบว่าเปิดโปรแกรม LM Studio และเปิด Local Server แล้วหรือยัง (Port 1234)\n2. ตรวจสอบว่าชื่อ Model ตรงกับตัวที่โหลดไว้ในเครื่องหรือไม่";
+        }
+    }
+
+    function copyToClipboard() {
+        const outputBox = document.getElementById('outputBox');
+        outputBox.select();
+        document.execCommand('copy');
+        alert('คัดลอกเนื้อหาลง คลิปบอร์ด แล้ว สามารถนำไปแปะแก้ต่อได้เลยครับ!');
+    }
+</script>
+
+</body>
+</html>

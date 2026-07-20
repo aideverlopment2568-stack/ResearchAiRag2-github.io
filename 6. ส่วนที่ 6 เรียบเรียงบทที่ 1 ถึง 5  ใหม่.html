@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2R Research Assistant - File Import & Synthesis System</title>
+    
+    <!-- เรียกใช้งานไฟล์ .js จากในเครื่อง (Local) แทนการดึงจาก Internet -->
+    <script src="mammoth.browser.min.js"></script>
+    <script src="pdf.min.js"></script>
+    <script>
+        // ตั้งค่า Worker สำหรับ pdf.js ให้ดึงจากไฟล์ในเครื่อง
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #fdf6f5;       /* พื้นหลังสีชมพูอ่อน พาสเทล */
+            --card-bg: #ffffff;        /* สีขาวบริสุทธิ์ */
+            --primary-color: #ffb3ba;  /* สีชมพูพาสเทลสดใส (Primary) */
+            --text-color: #5c5a68;     /* สีเทาอมม่วงเข้ม เพื่อให้อ่านง่ายแต่นุ่มนวล */
+            --border-color: #ffe6e9;   /* สีชมพูอ่อนมากสำหรับเส้นขอบ */
+            --hover-color: #ff9eaa;    /* สีเมื่อเอาเมาส์วาง */
+            
+            /* สีปุ่มสไตล์พาสเทล */
+            --extract-btn: #e2cbfa;    /* ม่วงพาสเทล */
+            --extract-hover: #d1b3f5;
+            --send-btn: #baffc9;       /* เขียวพาสเทล */
+            --send-hover: #9fe6b0;
+            --word-btn: #bae1ff;       /* ฟ้าพาสเทล */
+            --word-hover: #a0cff4;
+            --copy-btn: #ffffba;       /* เหลืองพาสเทล */
+            --copy-hover: #e6e69a;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Sarabun', 'TH Sarabun New';
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        /* แผงควบคุมฝั่งซ้าย */
+        .sidebar {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(255, 179, 186, 0.15);
+            border: 2px solid var(--border-color);
+            height: fit-content;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            font-size: 1.3rem;
+            color: #e5828b;
+            margin-top: 0;
+            border-bottom: 2px dashed var(--border-color);
+            padding-bottom: 10px;
+        }
+        .param-group {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+        }
+        .param-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #8da4d0;
+        }
+        input[type="text"], input[type="range"] {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(255,179,186,0.5);
+        }
+        /* พื้นที่ทำงานฝั่งขวา */
+        .workspace {
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(255, 179, 186, 0.15);
+            border: 2px solid var(--border-color);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #e5828b;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
+            background-color: #fffafb;
+            color: var(--text-color);
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background-color: #fff;
+        }
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            color: #4a4a4a;
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+        
+        .btn-extract { background-color: var(--extract-btn); }
+        .btn-extract:hover { background-color: var(--extract-hover); }
+        
+        .btn-send { background-color: var(--send-btn); }
+        .btn-send:hover { background-color: var(--send-hover); }
+        
+        .btn-download { background-color: var(--word-btn); }
+        .btn-download:hover { background-color: var(--word-hover); }
+        
+        .btn-copy { background-color: var(--copy-btn); }
+        .btn-copy:hover { background-color: var(--copy-hover); }
+        
+        .file-input-wrapper {
+            margin-bottom: 15px;
+            padding: 20px;
+            background-color: #fcf4f4;
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .action-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        /* สไตล์สำหรับ Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color); 
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--hover-color); 
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <h2>🌸 ระบบนำเข้าเอกสารวิจัย</h2>
+        <p style="font-size: 0.9rem; color: #888;">รองรับไฟล์ .pdf, .docx, .txt</p>
+
+        <div class="param-group">
+            <label for="lmUrl">🔗 LM Studio URL:</label>
+            <input type="text" id="lmUrl" value="http://localhost:1234/v1/chat/completions" style="width:100%; padding:8px; box-sizing:border-box;">
+
+            <label for="modelName" style="margin-top:12px;">🤖 Model:</label>
+            <input type="text" id="modelName" value="gemma-4-e4b-it" style="width:100%; padding:8px; box-sizing:border-box;">
+            
+            <label for="tempRange" style="margin-top:12px;">🌡️ Temperature (ความเป๊ะ):</label>
+            <input type="range" id="tempRange" min="0.1" max="1.0" step="0.1" value="0.3" style="width:100%;">
+            <span id="tempVal" style="display:block; text-align:center; font-weight:bold; color:var(--primary-color);">0.3</span>
+        </div>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="card">
+            <h3>1. 📄 นำเข้าไฟล์เอกสารอ้างอิง</h3>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept=".pdf, .docx, .txt" style="width: 100%; font-family: inherit;">
+                <div class="btn-group" style="justify-content: center; margin-top: 15px;">
+                    <button class="btn btn-extract" onclick="extractFileText()">📥 ดึงข้อความจากไฟล์</button>
+                </div>
+                <div id="extractStatus" style="margin-top: 10px; font-size: 0.95rem; color: #a2b9ee; font-weight: bold;"></div>
+            </div>
+            
+            <label style="font-weight: bold; display: block; margin-bottom: 8px; color: #e5828b;">ข้อมูลดิบที่ดึงได้ (Context):</label>
+            <textarea id="userInputBox" rows="6" placeholder="ข้อความจากไฟล์จะปรากฏที่นี่..."></textarea>
+        </div>
+
+        <div class="card">
+            <h3>2. ✨ ปรับแต่งขยายเนื้อหางานวิจัย (บทที่ 1-5)</h3>
+            <label style="font-weight: bold; display: block; margin-bottom: 8px; color: #e5828b;">คำสั่งควบคุม AI (System Prompt)ควรตั้งค่า Temperature 0.2-0.3:</label>
+            <textarea id="systemPromptBox" rows="4">
+
+		[ROLE]
+		คุณคือผู้เชี่ยวชาญด้านภาษาศาสตร์วิชาการและที่ปรึกษาวิทยานิพนธ์ระดับปริญญาโท หน้าที่หลักของคุณคือการรับเนื้อหางานวิจัยฉบับร่าง และนำมาเรียบเรียงใหม่พร้อมขยายความ (Elaborate and Refine) ให้มีความเป็นวิชาการชั้นสูงและมีความลึกซึ้งทางทฤษฎี
+
+		[CONTEXT]
+		ผู้ใช้งานจะป้อนเนื้อหางานวิจัยให้คุณครั้งละประมาณ 5 หน้ากระดาษ (A4) เป้าหมายคือการขยายเนื้อหาให้มีความยาวเพิ่มขึ้นเป็น 10-15 หน้ากระดาษ โดยการอธิบายขยายความเชิงวิเคราะห์ เพิ่มเหตุผลสนับสนุน และบริบทที่เกี่ยวข้อง โดยต้องรักษาแก่นความหมาย โครงสร้างเนื้อหา และลำดับหัวข้อเดิมไว้ทั้งหมด 100%
+
+		[WORKFLOW]
+		1. อ่านและวิเคราะห์: ทำความเข้าใจโครงสร้าง ลำดับหัวข้อ และข้อเท็จจริงในเนื้อหาต้นฉบับทั้งหมด
+		2. ขยายความเชิงวิเคราะห์ (Elaboration): ลงลึกในแต่ละย่อหน้า อธิบาย "เหตุผล" (Why) และ "บริบท" (Context) ของข้อมูลให้ชัดเจนขึ้น
+		3. เชื่อมโยงเนื้อหา (Cohesion): ใช้คำเชื่อมทางวิชาการระหว่างย่อหน้าและหัวข้อ เพื่อให้การอ่านมีความลื่นไหลเป็นตรรกะเดียวกัน
+		4. ตรวจสอบข้อห้าม (Constraint Check): ตรวจสอบว่าไม่ได้เผลอสรุปความ (No Summarization) ไม่ได้แต่งเติมข้อมูลตัวเลขหรือการทดลอง (No Hallucination) และไม่ได้เปลี่ยนลำดับหัวข้อ
+		5. สร้างผลลัพธ์ (Output): พิมพ์เนื้อหาที่ได้รับการขยายความและปรับระดับภาษาแล้วออกมาให้สมบูรณ์ตั้งแต่ต้นจนจบ
+
+		[TONE & STYLE]
+		- ภาษาเขียนเชิงวิชาการ (Formal Academic Tone) ระดับปริญญาโท
+		- มีความสละสลวย เป็นทางการ หลีกเลี่ยงภาษาพูด หรือคำฟุ่มเฟือย
+		- เป็นกลางและเป็นรูปธรรม หลีกเลี่ยงการใช้สรรพนามบุรุษที่ 1 หรือ 2 (เช่น ผม, ฉัน, คุณ)
+		- ถ้ามีข้อความอ้างถึง หรือนำมาจากเอกสารใดๆ ควรเน้นย้ำให้ AI ใส่ข้อความที่บ่งบอกถึงการมี "แหล่งอ้างอิง" (Citation) ประกอบเสมอ เพื่อความน่าเชื่อถือ แต่ถ้าไม่มีขอให้ขยายข้อความได้ตามความเหมาะสมของเนื้อหา ห้ามจำกัดเนื้อหา
+
+		[FEW-SHOT EXAMPLES]
+		ตัวอย่างการปรับภาษาและขยายความโดยยึดข้อเท็จจริงเดิม:
+		Input (ต้นฉบับ): 
+		"ในการทดสอบระบบมอนิเตอร์ เราได้นำไปทดสอบในห้องทำงานปกติ ไม่ใช่ห้องผ่าตัดในโรงพยาบาล เพื่อดูว่าการส่งข้อมูลผ่าน WiFi ทำงานได้ดีไหม"
+
+		Output (ขยายความและปรับภาษา): 
+		"ในการประเมินประสิทธิภาพเบื้องต้นของระบบเฝ้าระวัง (Monitoring System) ผู้วิจัยได้กำหนดสภาพแวดล้อมสำหรับการทดสอบภายในห้องปฏิบัติงานทั่วไป (Standard Office Environment) แทนการดำเนินงานในห้องผ่าตัดทางคลินิก (Clinical Operating Room) ทั้งนี้ วัตถุประสงค์หลักของการทดสอบในระยะนี้มุ่งเน้นไปที่การตรวจสอบความเสถียรและความแม่นยำของการส่งผ่านข้อมูล (Data Transmission) ผ่านเครือข่ายไร้สาย (Wi-Fi) เพื่อให้มั่นใจว่าสถาปัตยกรรมของระบบสามารถจัดการกับชุดข้อมูลได้อย่างต่อเนื่องก่อนนำไปประยุกต์ใช้ในสภาพแวดล้อมทางการแพทย์จริง"
+
+		[TEMPLATE/FORMAT]
+		ผลลัพธ์จะต้องคงรูปแบบโครงสร้างหัวข้อตามที่ผู้ใช้งานให้มา (ตัวอย่าง):
+		หัวข้อหลักที่ [ตามต้นฉบับ]
+		[เนื้อหาที่ขยายความและเรียบเรียงใหม่โดยแบ่งย่อหน้าอย่างเหมาะสม]
+		หัวข้อรองที่ [ตามต้นฉบับ]
+		[เนื้อหาที่ขยายความและเรียบเรียงใหม่]
+		(ดำเนินการต่อไปจนจบเนื้อหาทั้งหมด)
+            
+			</textarea>
+            
+            <div class="btn-group">
+                <button class="btn btn-send" onclick="submitToLocalAI()">🚀 ส่งข้อมูลให้ AI ประมวลผลแบบริ้ววิ่ง</button>
+            </div>
+
+            <div style="margin-top: 25px; border-top: 2px dashed var(--border-color); padding-top: 15px;">
+                <div class="action-header">
+                    <label style="font-weight: bold; color: #e5828b;">ร่างเนื้อหาวิจัยที่ได้จาก AI (ผลลัพธ์):</label>
+                    
+                    <div class="btn-group" style="margin-top: 0; gap: 8px;">
+                        <button class="btn btn-copy" style="padding: 8px 16px; font-size: 0.9rem;" onclick="copyOutputText()">📋 คัดลอกข้อความ</button>
+                        <button class="btn btn-download" style="padding: 8px 16px; font-size: 0.9rem;" onclick="exportToWord()">💾 ดาวน์โหลดเป็นไฟล์ Word (.doc)</button>
+                    </div>
+                </div>
+                <textarea id="outputBox" rows="15" placeholder="ผลลัพธ์จะค่อย ๆ วิ่งแสดงตรงนี้... (ระบบจะตัดอักขระพิเศษออกอัตโนมัติ)"></textarea>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // อัปเดตค่า Temperature บนหน้าจอ
+    document.getElementById('tempRange').addEventListener('input', (e) => {
+        document.getElementById('tempVal').innerText = e.target.value;
+    });
+
+    // ฟังก์ชันทำความสะอาดข้อความ ตัดสัญลักษณ์ Markdown หรืออักขระที่ไม่ใช่วิชาการ
+    function cleanAcademicText(text) {
+        // ลบอักขระพิเศษ # * _ ` ~ และเครื่องหมายที่ไม่จำเป็น
+        return text.replace(/[*#_~`]/g, '');
+    }
+
+    // ==========================================
+    // 1. ระบบดึงข้อความจากไฟล์ (Extractor)
+    // ==========================================
+    async function extractFileText() {
+        const fileInput = document.getElementById('fileInput');
+        const statusText = document.getElementById('extractStatus');
+        const userInputBox = document.getElementById('userInputBox');
+        
+        if (!fileInput.files[0]) {
+            alert('กรุณาเลือกไฟล์ก่อนครับ');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const fileName = file.name.toLowerCase();
+        statusText.innerText = "⏳ กำลังดึงข้อความ... โปรดรอสักครู่";
+        userInputBox.value = "";
+
+        try {
+            if (fileName.endsWith('.txt')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userInputBox.value = e.target.result;
+                    statusText.innerText = "✅ ดึงข้อความจาก .txt สำเร็จ!";
+                };
+                reader.readAsText(file, 'UTF-8');
+            } 
+            else if (fileName.endsWith('.docx')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                userInputBox.value = result.value;
+                statusText.innerText = "✅ ดึงข้อความจาก Word สำเร็จ!";
+            } 
+            else if (fileName.endsWith('.pdf')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = "";
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + "\n\n";
+                }
+                userInputBox.value = fullText;
+                statusText.innerText = `✅ ดึงข้อความจาก PDF สำเร็จ! (รวม ${pdf.numPages} หน้า)`;
+            } 
+            else {
+                alert('ระบบรองรับเฉพาะไฟล์ .pdf, .docx และ .txt เท่านั้นครับ');
+                statusText.innerText = "❌ รูปแบบไฟล์ไม่รองรับ";
+            }
+        } catch (error) {
+            console.error(error);
+            statusText.innerText = "❌ เกิดข้อผิดพลาดในการดึงข้อความ";
+            alert("Error: " + error.message);
+        }
+    }
+
+    // ==========================================
+    // 2. ระบบส่งข้อมูลไปยัง LM Studio (Streaming)
+    // ==========================================
+    async function submitToLocalAI() {
+        const outputBox = document.getElementById('outputBox');
+        const rawText = document.getElementById('userInputBox').value.trim();
+        const systemPrompt = document.getElementById('systemPromptBox').value;
+        const lmUrl = document.getElementById('lmUrl').value;
+        const modelName = document.getElementById('modelName').value;
+        const temperature = parseFloat(document.getElementById('tempRange').value);
+
+        if (!rawText) {
+            alert("กรุณาอัปโหลดไฟล์และดึงข้อความก่อนส่งให้ AI ครับ");
+            return;
+        }
+
+        outputBox.value = "กำลังเชื่อมต่อเซิร์ฟเวอร์ Local... กรุณารอสักครู่\n";
+
+        const finalPrompt = `อ้างอิงจากข้อมูลต่อไปนี้:\n---\n\n${rawText}\n\n---\nคำสั่ง: จงทำตาม System Prompt ที่กำหนดไว้ โดยห้ามใช้สัญลักษณ์ * หรือ # เด็ดขาด`;
+
+        try {
+            const response = await fetch(lmUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: finalPrompt }
+                    ],
+                    temperature: temperature,
+                    stream: true 
+                })
+            });
+
+            if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อ LM Studio ได้ กรุณาตรวจสอบว่าเปิดเซิร์ฟเวอร์หรือยัง");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            outputBox.value = ""; 
+            let fullText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices[0].delta.content;
+                            if (content) {
+                                fullText += content;
+                                let cleanText = fullText.replace(/<\|channel>thought[\s\S]*?<channel\|>/g, '').trim();
+                                cleanText = cleanText.replace(/<\|channel>thought[\s\S]*/g, '').trim();
+                                
+                                // คลีนสัญลักษณ์ Markdown ทันทีระหว่างสตรีมมิ่ง
+                                cleanText = cleanAcademicText(cleanText);
+                                
+                                outputBox.value = cleanText;
+                                outputBox.scrollTop = outputBox.scrollHeight;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+        } catch (error) {
+            outputBox.value = "เกิดข้อผิดพลาด: " + error.message + "\n\nคำแนะนำ: ตรวจสอบว่าเปิดโปรแกรม LM Studio และ Local Server ทำงานอยู่หรือไม่";
+        }
+    }
+
+    // ==========================================
+    // 3. ระบบบันทึกและดาวน์โหลดผลลัพธ์ (Download & Copy)
+    // ==========================================
+    function exportToWord() {
+        let content = document.getElementById('outputBox').value;
+        if (!content.trim()) {
+            alert('ไม่มีข้อมูลร่างเนื้อหาวิจัยให้บันทึกครับ');
+            return;
+        }
+
+        // ตัดสัญลักษณ์ก่อนส่งออกอีกรอบเพื่อความชัวร์
+        content = cleanAcademicText(content);
+
+        // แปลงเว้นบรรทัดเป็นโครงสร้าง Paragraph
+        const formattedHtml = content.split('\n').filter(p => p.trim() !== '').map(p => {
+            return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+        }).join('');
+
+        // ตั้งค่าหน้ากระดาษวิจัย: กั้นซ้าย 3.81 ซม. (1.5 นิ้ว), กั้นบน 3.81 ซม. (1.5 นิ้ว), ล่าง-ขวา 2.54 ซม. (1 นิ้ว)
+        const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <style>
+                @page WordSection1 {
+                    size: 21.0cm 29.7cm; /* A4 */
+                    margin: 3.81cm 2.54cm 2.54cm 3.81cm; /* บน ขวา ล่าง ซ้าย */
+                    mso-header-margin: 1.27cm;
+                    mso-footer-margin: 1.27cm;
+                    mso-paper-source: 0;
+                }
+                div.WordSection1 { page: WordSection1; }
+                body {
+                    font-family: 'TH Sarabun New', 'TH SarabunPSK', sans-serif;
+                    font-size: 16pt;
+                    color: windowtext;
+                }
+                p {
+                    margin-top: 0cm;
+                    margin-bottom: 0pt;
+                    text-indent: 1.5cm; /* ย่อหน้า 1.5 ซม. */
+                    text-align: justify;
+                    line-height: 1.0;
+                }
+            </style>
+        </head>
+        <body><div class="WordSection1">`;
+        
+        const footer = "</div></body></html>";
+        
+        const sourceHTML = header + formattedHtml + footer;
+        const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        
+        const file = document.createElement('a');
+        file.href = url;
+        file.download = 'ร่างเนื้อหาวิจัย_Academic_Format.doc';
+        file.click();
+        
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
+
+    function copyOutputText() {
+        const outputBox = document.getElementById('outputBox');
+        if (!outputBox.value.trim()) {
+            alert('ไม่มีเนื้อหาให้คัดลอกครับ');
+            return;
+        }
+        
+        // คลีนสัญลักษณ์ก่อน copy
+        const cleanContent = cleanAcademicText(outputBox.value);
+        outputBox.value = cleanContent; // อัปเดตในกล่องข้อความด้วย
+        
+        outputBox.select();
+        document.execCommand('copy');
+        alert('📋 คัดลอกเนื้อหาลงคลิปบอร์ดเรียบร้อยแล้ว! พร้อมนำไปวางในโปรแกรมอื่น');
+    }
+</script>
+
+</body>
+</html>

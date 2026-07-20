@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>G*Power Health Service Estimator (Offline)</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 20px; 
+            background-color: #f4f7f6; 
+            color: #333; 
+            line-height: 1.5; 
+            display: flex; 
+            justify-content: center;
+        }
+        
+        /* Layout หลักแบบแบ่งคอลัมน์ */
+        .main-wrapper { 
+            display: flex; 
+            gap: 20px; 
+            max-width: 1100px; 
+            width: 100%; 
+            flex-wrap: wrap; 
+            align-items: flex-start; 
+        }
+        
+        .container { 
+            flex: 2; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            min-width: 350px; 
+        }
+        
+        /* สไตล์กล่องคำแนะนำด้านข้าง */
+        .info-panel { 
+            flex: 1; 
+            background: #fff; 
+            padding: 20px; 
+            border-radius: 10px; 
+            border-top: 5px solid #2980b9; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            min-width: 250px;
+            position: sticky;
+            top: 20px;
+        }
+        .info-panel h3 { 
+            color: #2980b9; 
+            background: transparent; 
+            padding: 0; 
+            margin-top: 0; 
+            font-size: 1.2em;
+        }
+        .info-panel ol { padding-left: 20px; }
+        .info-panel li { font-size: 0.9em; margin-bottom: 15px; color: #555; }
+        .info-panel table { width:100%; font-size: 0.9em; border-collapse: collapse; margin-top: 10px;}
+        .info-panel th, .info-panel td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        .info-panel th { background: #f8f9fa; }
+
+        h2 { text-align: center; color: #2c3e50; margin-top: 0; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #7f8c8d; font-size: 0.9em; margin-bottom: 25px; }
+        
+        /* หัวข้อของกล่องคำนวณหลัก */
+        .container h3 { 
+            font-size: 1.1em; 
+            color: #fff; 
+            background: #34495e; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            margin-top: 25px; 
+            margin-bottom: 15px; 
+        }
+        
+        /* สไตล์กล่องและช่องกรอก */
+        .control-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #444; }
+        select, input[type="number"] { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #bdc3c7; font-size: 15px; box-sizing: border-box; }
+        input[type="range"] { width: 100%; cursor: pointer; margin-top: 5px; }
+        
+        /* ส่วนคำนวณ Effect Size */
+        .effect-box { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 20px; border-radius: 8px; margin-bottom: 15px; }
+        .input-row { display: flex; gap: 15px; margin-bottom: 10px; flex-wrap: wrap; }
+        .input-col { flex: 1; min-width: 150px; }
+        .input-col label { font-size: 0.9em; color: #555; }
+        
+        button { background-color: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.2s;}
+        button:hover { background-color: #219150; }
+        
+        /* ส่วนผลลัพธ์ */
+        .result-box { margin-top: 30px; padding: 20px; background: #e8f6f3; border-left: 6px solid #27ae60; border-radius: 5px; }
+        .result-title { font-size: 1.1em; color: #2c3e50; font-weight: bold; margin-bottom: 10px; }
+        .result-number { font-size: 1.8em; color: #27ae60; font-weight: bold; }
+        .status-pass { color: #27ae60; font-weight: bold; }
+        .status-fail { color: #e74c3c; font-weight: bold; }
+        
+        /* Utility */
+        .hidden { display: none !important; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; background: #e67e22; color: white; margin-left: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="container">
+        <h2>โปรแกรมคำนวณขนาดตัวอย่างระบบสุขภาพ</h2>
+        <div class="subtitle"> G*Power รองรับทุกสถิติ (Offline Version)</div>
+
+        <h3>ขั้นที่ 1: เลือกประเภทสถิติ</h3>
+        <div class="control-group">
+            <select id="statType" onchange="updateUI()">
+                <option value="independent">Independent t-test (เปรียบเทียบ 2 กลุ่มอิสระ)</option>
+                <option value="paired">Paired t-test (เปรียบเทียบก่อน-หลัง ในกลุ่มเดียว)</option>
+                <option value="onesample">One-sample t-test (เปรียบเทียบ 1 กลุ่มกับค่ามาตรฐาน)</option>
+                <option value="anova">ANOVA (เปรียบเทียบมากกว่า 2 กลุ่มขึ้นไป)</option>
+                <option value="correlation">Correlation (หาความสัมพันธ์ของ 2 ตัวแปร)</option>
+                <option value="chisquare">Chi-square (ทดสอบสัดส่วน/ความถี่)</option>
+            </select>
+        </div>
+
+        <h3>ขั้นที่ 2: ระบุขนาดอิทธิพล (Effect Size)</h3>
+        <div class="effect-box">
+            
+            <div id="ui-two-groups" class="hidden">
+                <div style="color: #2980b9; margin-bottom: 10px; font-weight: bold;">เครื่องมือช่วยคำนวณ (จากงานวิจัยอ้างอิง)</div>
+                <div class="input-row">
+                    <div class="input-col">
+                        <label>กลุ่มทดลอง (หรือหลังทำ)</label>
+                        <input type="number" id="mean1" placeholder="ค่าเฉลี่ย (Mean)">
+                        <input type="number" id="sd1" placeholder="ส่วนเบี่ยงเบน (SD)" style="margin-top: 5px;">
+                    </div>
+                    <div class="input-col">
+                        <label>กลุ่มควบคุม (หรือก่อนทำ)</label>
+                        <input type="number" id="mean2" placeholder="ค่าเฉลี่ย (Mean)">
+                        <input type="number" id="sd2" placeholder="ส่วนเบี่ยงเบน (SD)" style="margin-top: 5px;">
+                    </div>
+                </div>
+                <button onclick="calculateCohenD()">ดึงค่าไปคำนวณ ⬇️</button>
+            </div>
+
+            <div id="ui-one-group" class="hidden">
+                <div style="color: #2980b9; margin-bottom: 10px; font-weight: bold;">เครื่องมือช่วยคำนวณ (จากงานวิจัยอ้างอิง)</div>
+                <div class="input-row">
+                    <div class="input-col">
+                        <label>ข้อมูลกลุ่มตัวอย่าง</label>
+                        <input type="number" id="mean_single" placeholder="ค่าเฉลี่ย (Mean)">
+                        <input type="number" id="sd_single" placeholder="ส่วนเบี่ยงเบน (SD)" style="margin-top: 5px;">
+                    </div>
+                    <div class="input-col">
+                        <label>ค่าเป้าหมายที่นำไปเทียบ</label>
+                        <input type="number" id="target_val" placeholder="Target Constant">
+                    </div>
+                </div>
+                <button onclick="calculateOneSampleD()">ดึงค่าไปคำนวณ ⬇️</button>
+            </div>
+
+            <div class="control-group" style="margin-top: 20px;">
+                <label>เลื่อนกำหนดค่า Effect Size <span id="esName" class="badge">Cohen's d</span></label>
+                <div style="font-size: 1.2em; font-weight: bold; color: #d35400; text-align: center;" id="effectValText">0.50</div>
+                <input type="range" id="effect" min="0.05" max="1.50" step="0.01" value="0.50" oninput="updateSlider('effect', 'effectValText')">
+            </div>
+        </div>
+
+        <h3>ขั้นที่ 3: ตั้งค่าพารามิเตอร์ระบบของคุณ</h3>
+        
+        <div class="control-group">
+            <label>จำนวนผู้รับบริการที่มีอยู่จริง (คน/ชุดข้อมูล):</label>
+            <input type="number" id="actualN" value="1500" oninput="calculateGPower()">
+        </div>
+
+        <div class="input-row">
+            <div class="input-col">
+                <label>Alpha (ความคลาดเคลื่อน): <span id="alphaValText">0.05</span></label>
+                <input type="range" id="alpha" min="0.01" max="0.10" step="0.01" value="0.05" oninput="updateSlider('alpha', 'alphaValText')">
+            </div>
+            <div class="input-col">
+                <label>Power (อำนาจการทดสอบ): <span id="powerValText">0.80</span></label>
+                <input type="range" id="power" min="0.50" max="0.99" step="0.01" value="0.80" oninput="updateSlider('power', 'powerValText')">
+            </div>
+        </div>
+
+        <div class="result-box">
+            <div class="result-title">ขนาดตัวอย่างที่แนะนำ (Required N):</div>
+            <div id="resultNumber" class="result-number">-- คน</div>
+            <div id="resultDetail" style="margin-top: 5px; font-size: 0.95em; color: #555;"></div>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ccc;">
+                สถานะข้อมูลของคุณ: <span id="statusArea">--</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <h3>คู่มือพารามิเตอร์หลัก</h3>
+        <ol>
+            <li><strong>Effect Size (ขนาดอิทธิพล):</strong> บอกว่าความแตกต่างสำคัญเพียงใด (Cohen's d: 0.2 เล็ก, 0.5 กลาง, 0.8 ใหญ่)</li>
+            <li><strong>Alpha (ระดับนัยสำคัญ):</strong> โอกาสเกิด "ความผิดพลาดประเภทที่ 1" (สรุปว่าต่าง ทั้งที่จริงไม่ต่าง) นิยมใช้ 0.05</li>
+            <li><strong>Power (อำนาจการทดสอบ):</strong> โอกาสที่จะตรวจพบความแตกต่างได้จริง นิยมใช้ 0.80</li>
+        </ol>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+        <table>
+            <thead>
+                <tr>
+                    <th>พารามิเตอร์</th>
+                    <th>ค่ามาตรฐาน</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Alpha</td>
+                    <td>0.05</td>
+                </tr>
+                <tr>
+                    <td>Power</td>
+                    <td>0.80</td>
+                </tr>
+                <tr>
+                    <td>Effect Size</td>
+                    <td>0.50</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // 1. อัปเดตหน้าตา UI ตามสถิติที่เลือก
+    function updateUI() {
+        const type = document.getElementById('statType').value;
+        const uiTwo = document.getElementById('ui-two-groups');
+        const uiOne = document.getElementById('ui-one-group');
+        const esName = document.getElementById('esName');
+        const effectSlider = document.getElementById('effect');
+        
+        // ซ่อนทั้งหมดก่อน
+        uiTwo.classList.add('hidden');
+        uiOne.classList.add('hidden');
+
+        // แยกตามสถิติ
+        if (type === 'independent' || type === 'paired') {
+            uiTwo.classList.remove('hidden');
+            esName.innerText = "Cohen's d";
+            effectSlider.max = "2.00";
+        } else if (type === 'onesample') {
+            uiOne.classList.remove('hidden');
+            esName.innerText = "Cohen's d";
+            effectSlider.max = "2.00";
+        } else if (type === 'anova') {
+            esName.innerText = "Cohen's f";
+            effectSlider.max = "1.00";
+        } else if (type === 'correlation') {
+            esName.innerText = "Pearson's r";
+            effectSlider.max = "0.99";
+        } else if (type === 'chisquare') {
+            esName.innerText = "Cohen's w";
+            effectSlider.max = "1.00";
+        }
+        
+        calculateGPower();
+    }
+
+    // 2. คำนวณ ES กรณี 2 กลุ่ม
+    function calculateCohenD() {
+        let m1 = parseFloat(document.getElementById('mean1').value) || 0;
+        let sd1 = parseFloat(document.getElementById('sd1').value) || 0;
+        let m2 = parseFloat(document.getElementById('mean2').value) || 0;
+        let sd2 = parseFloat(document.getElementById('sd2').value) || 0;
+        
+        if (sd1 <= 0 || sd2 <= 0) {
+            alert("กรุณากรอก SD ให้มากกว่า 0"); return;
+        }
+        let sdPooled = Math.sqrt((Math.pow(sd1, 2) + Math.pow(sd2, 2)) / 2);
+        let d = Math.abs(m1 - m2) / sdPooled;
+        
+        setSliderValue(d);
+    }
+
+    // 3. คำนวณ ES กรณีกลุ่มเดียวเปรียบเทียบค่า
+    function calculateOneSampleD() {
+        let m = parseFloat(document.getElementById('mean_single').value) || 0;
+        let sd = parseFloat(document.getElementById('sd_single').value) || 0;
+        let target = parseFloat(document.getElementById('target_val').value) || 0;
+        
+        if (sd <= 0) {
+            alert("กรุณากรอก SD ให้มากกว่า 0"); return;
+        }
+        let d = Math.abs(m - target) / sd;
+        
+        setSliderValue(d);
+    }
+
+    // ช่วยตั้งค่าแถบเลื่อน
+    function setSliderValue(val) {
+        let max = parseFloat(document.getElementById('effect').max);
+        if(val > max) val = max;
+        if(val < 0.01) val = 0.05;
+        
+        document.getElementById('effect').value = val;
+        updateSlider('effect', 'effectValText');
+    }
+
+    // 4. ควบคุมแถบเลื่อน
+    function updateSlider(id, textId) {
+        let val = parseFloat(document.getElementById(id).value).toFixed(2);
+        document.getElementById(textId).innerText = val;
+        calculateGPower();
+    }
+
+    // ฟังก์ชันแปลงค่า Z
+    function getZAlpha(alpha) {
+        if(alpha <= 0.01) return 2.576;
+        if(alpha <= 0.05) return 1.96 + ((0.05 - alpha) * 15.4);
+        return 1.645 + ((0.10 - alpha) * 6.3);
+    }
+
+    function getZBeta(power) {
+        if(power <= 0.80) return 0.842;
+        if(power <= 0.90) return 1.282;
+        if(power <= 0.95) return 1.645;
+        return 2.326; // approx for 0.99
+    }
+
+    // 5. คำนวณ G*Power ตามสถิติ
+    function calculateGPower() {
+        const type = document.getElementById('statType').value;
+        const actualN = parseInt(document.getElementById('actualN').value) || 0;
+        const alpha = parseFloat(document.getElementById('alpha').value);
+        const power = parseFloat(document.getElementById('power').value);
+        let effect = parseFloat(document.getElementById('effect').value);
+        
+        const zAlpha = getZAlpha(alpha);
+        const zBeta = getZBeta(power);
+        const zSumSq = Math.pow(zAlpha + zBeta, 2);
+
+        let requiredN = 0;
+        let detailText = "";
+
+        if (type === 'independent') {
+            let nPerGroup = Math.ceil(2 * (zSumSq / Math.pow(effect, 2)));
+            requiredN = nPerGroup * 2;
+            detailText = `(แบ่งเป็น 2 กลุ่ม กลุ่มละ ${nPerGroup} คน)`;
+            
+        } else if (type === 'paired' || type === 'onesample') {
+            requiredN = Math.ceil(zSumSq / Math.pow(effect, 2));
+            detailText = `(ทดสอบใน 1 กลุ่มตัวอย่าง)`;
+            
+        } else if (type === 'anova') {
+            // Approximation for ANOVA based on f
+            requiredN = Math.ceil(zSumSq / Math.pow(effect, 2));
+            detailText = `(ตัวอย่างรวมที่ใช้กระจายในทุกกลุ่มเปรียบเทียบ)`;
+            
+        } else if (type === 'correlation') {
+            if(effect >= 0.99) effect = 0.99;
+            // Fisher's Z transformation
+            let c = 0.5 * Math.log((1 + effect) / (1 - effect));
+            requiredN = Math.ceil((zSumSq / Math.pow(c, 2)) + 3);
+            detailText = `(จำนวนคู่ข้อมูลที่ใช้หาความสัมพันธ์)`;
+            
+        } else if (type === 'chisquare') {
+            requiredN = Math.ceil(zSumSq / Math.pow(effect, 2));
+            detailText = `(จำนวนความถี่หรือขนาดตัวอย่างรวมทั้งหมด)`;
+        }
+        
+        // แสดงผล
+        document.getElementById('resultNumber').innerText = requiredN.toLocaleString() + " คน";
+        document.getElementById('resultDetail').innerText = detailText;
+        
+        // ประเมินสถานะ
+        let statusArea = document.getElementById('statusArea');
+        if (actualN >= requiredN) {
+            statusArea.innerHTML = `<span class="status-pass">✅ เพียงพอ (ต้องการขั้นต่ำ ${requiredN} คน)</span>`;
+        } else {
+            statusArea.innerHTML = `<span class="status-fail">❌ ไม่เพียงพอ (ขาดอีก ${requiredN - actualN} คน)</span>`;
+        }
+    }
+    
+    // โหลดครั้งแรก
+    updateUI();
+</script>
+
+</body>
+</html>
