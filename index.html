@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เมนูรวมแอปพลิเคชันสร้างวิจัย (IntegrateMind AI)</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --text-color: #1d3557;     
+        }
+
+        body {
+            font-family: 'Kanit', 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(-45deg, #ff9a9e, #fecfef, #a1c4fd, #c2e9fb);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            padding: 30px 60px;
+            border-radius: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            max-width: 900px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .header h1 {
+            font-size: 2.4rem;
+            background: linear-gradient(45deg, #ec008c, #fc6767);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 10px 0;
+            font-weight: 800;
+        }
+
+        .header p {
+            color: #555;
+            font-size: 1.15rem;
+            margin: 5px 0;
+            font-weight: 500;
+        }
+
+        .dashboard-wrapper {
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin: 30px 0 20px 10px;
+            font-weight: 600;
+            border-bottom: 2px dashed rgba(255, 255, 255, 0.8);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        .btn-app {
+            display: flex;
+            align-items: center;
+            padding: 18px 25px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-decoration: none;
+            color: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-app:hover {
+            transform: translateY(-5px) scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        /* Colors */
+        .bg-red { background: linear-gradient(135deg, #FF416C, #FF4B2B); }
+        .bg-red:hover { box-shadow: 0 12px 25px rgba(255, 65, 108, 0.4); }
+
+        .bg-purple-dark { background: linear-gradient(135deg, #4A00E0, #8E2DE2); }
+        .bg-purple-dark:hover { box-shadow: 0 12px 25px rgba(142, 45, 226, 0.4); }
+
+        .bg-blue-sea { background: linear-gradient(135deg, #00B4DB, #0083B0); }
+        .bg-blue-sea:hover { box-shadow: 0 12px 25px rgba(0, 180, 219, 0.4); }
+
+        .bg-green { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .bg-green:hover { box-shadow: 0 12px 25px rgba(56, 239, 125, 0.4); }
+
+        .bg-yellow { background: linear-gradient(135deg, #F2994A, #F2C94C); color: #1d3557; text-shadow: none; }
+        .bg-yellow:hover { box-shadow: 0 12px 25px rgba(242, 153, 74, 0.4); }
+
+        .bg-pink { background: linear-gradient(135deg, #ec008c, #fc6767); }
+        .bg-pink:hover { box-shadow: 0 12px 25px rgba(236, 0, 140, 0.4); }
+
+        .bg-indigo { background: linear-gradient(135deg, #7F00FF, #E100FF); }
+        .bg-indigo:hover { box-shadow: 0 12px 25px rgba(127, 0, 255, 0.4); }
+
+        .bg-magic { background: linear-gradient(135deg, #DA22FF, #9733EE); }
+        .bg-magic:hover { box-shadow: 0 12px 25px rgba(218, 34, 255, 0.6); }
+
+        .bg-blue-light { background: linear-gradient(135deg, #00c6ff, #0072ff); }
+        .bg-blue-light:hover { box-shadow: 0 12px 25px rgba(0, 198, 255, 0.4); }
+
+        .bg-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .bg-cyan:hover { box-shadow: 0 12px 25px rgba(6, 182, 212, 0.4); }
+
+        .bg-orange { background: linear-gradient(135deg, #fb923c, #fdba74); color: #1d3557; text-shadow: none; }
+        .bg-orange:hover { box-shadow: 0 12px 25px rgba(251, 146, 60, 0.4); }
+
+        .bg-teal { background: linear-gradient(135deg, #20b2aa, #48d1cc); }
+        .bg-teal:hover { box-shadow: 0 12px 25px rgba(32, 178, 170, 0.4); }
+
+        .bg-ai-bot { 
+            background: linear-gradient(135deg, #FF9A9E, #FECFEF); 
+            color: #ff3366; 
+            text-shadow: none;
+            border: 2px solid #ff99cc;
+            font-weight: 600;
+        }
+        .bg-ai-bot:hover { box-shadow: 0 12px 25px rgba(255, 154, 158, 0.6); }
+
+        .icon-box {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 14px;
+            margin-right: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .bg-yellow .icon-box, .bg-orange .icon-box, .bg-ai-bot .icon-box { background: rgba(255, 255, 255, 0.6); }
+
+        .icon-box svg {
+            width: 26px;
+            height: 26px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .ai-emoji {
+            font-size: 28px;
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 25px 20px; }
+            .header h1 { font-size: 1.8rem; }
+            .section-title { font-size: 1.2rem; }
+            .grid-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>✨ เมนูรวมแอปพลิเคชันสร้างวิจัย</h1>
+        <p>IntegrateMind AI Research (Local PC & GitHub Pages)</p>
+        <hr style="width: 80px; border: 2px solid #ec008c; border-radius: 5px; margin: 15px auto; border-top: none;">
+        <p style="font-size: 1rem;">คลิกเพื่อเปิดใช้งานแอปพลิเคชัน</p>
+    </div>
+
+    <div class="dashboard-wrapper">
+        
+        <!-- ส่วนที่ 1: ส่วนหลัก -->
+        <div class="section-title">📌 ส่วนหลัก (Main Phases)</div>
+        <div class="grid-container">
+            <a href="1. เริ่มต้นเขียนเรื่องวิเคราะห์ปัญหา.html" class="btn-app bg-red">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+                1. เริ่มต้นเขียนเรื่องวิเคราะห์ปัญหา
+            </a>	
+            
+            <a href="2. เขียนวิจัยบทที่1 บทนำ.html" class="btn-app bg-purple-dark">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></div>
+                2. เขียนวิจัยบทที่ 1 บทนำ
+            </a>
+        
+            <a href="3. เขียนวิจัยบทที่2 ทบทวนวรรณกรรม.html" class="btn-app bg-blue-sea">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
+                3. เขียนวิจัยบทที่ 2 ทบทวนวรรณกรรม
+            </a>
+        
+            <a href="4. เขียนวิจัยบทที่3 วิธีการดำเนินการวิจัย.html" class="btn-app bg-green">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M9 2v4.46l-6.15 9.22A2 2 0 0 0 4.51 19h14.98a2 2 0 0 0 1.66-3.32L15 6.46V2"></path><path d="M6 2h12"></path><path d="M6 14h12"></path></svg></div>
+                4. เขียนวิจัยบทที่ 3 วิธีการดำเนินการวิจัย
+            </a>
+
+            <a href="5. เขียนวิจัยบทที่4 ผลการวิจัย.html" class="btn-app bg-yellow">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
+                5. เขียนวิจัยบทที่ 4 ผลการวิจัย
+            </a>
+
+            <a href="6. เขียนวิจัยบทที่5 สรุป อธิปรายผลการวิจัยและข้อเสนอแนะ.html" class="btn-app bg-pink">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
+                6. เขียนวิจัยบทที่ 5 สรุปและอภิปรายผล
+            </a>
+
+            <a href="7. เขียน Abstract Research.html" class="btn-app bg-magic">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
+                7. เขียน Abstract Research
+            </a>
+        </div>
+
+        <!-- ส่วนที่ 2: ส่วนเสริม -->
+        <div class="section-title" style="margin-top: 50px;">🛠️ ส่วนเสริม (Tools & Utilities)</div>
+        <div class="grid-container">
+            
+            <a href="1. ส่วนที่ 1 นับจำนวน Token AI.html" class="btn-app bg-orange">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></div>
+                ส่วนที่ 1 นับจำนวน Token AI
+            </a>
+
+            <a href="2. ส่วนที่ 2 คำนวณ G power.html" class="btn-app bg-indigo">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
+                ส่วนที่ 2 คำนวณ G power
+            </a>
+
+            <a href="3. ส่วนที่ 3 สรุปสังเคราะห์ทบทวนวรรณกรรมบทที่ 2.html" class="btn-app bg-indigo">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div>
+                ส่วนที่ 3 สรุปสังเคราะห์ทบทวนวรรณกรรม
+            </a>
+
+            <a href="4. ส่วนที่ 4 สร้างระบบสมมุติข้อมูลจากแบบสอบถาม.html" class="btn-app bg-cyan">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg></div>
+                ส่วนที่ 4 สร้างระบบสมมุติข้อมูล
+            </a>
+                
+            <a href="5. ส่วนที่ 5 เขียนโครงร่างงานวิจัยบทที่ 1ถึง3 ส่งประเมิน.html" class="btn-app bg-blue-light">
+               <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div>
+               ส่วนที่ 5 เขียนโครงร่างวิจัยส่งประเมิน
+            </a>
+
+            <a href="6. ส่วนที่ 6 เรียบเรียงบทที่ 1 ถึง 5 ใหม่.html" class="btn-app bg-teal">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg></div>
+                ส่วนที่ 6 เรียบเรียงบทที่ 1 ถึง 5 ใหม่
+             </a>
+
+             <a href="7. ส่วนที่ 7 ระบบการช่วยเหลือด้วย Ai Chatbot.html" class="btn-app bg-ai-bot">
+                <div class="icon-box"><span class="ai-emoji">🤖✨</span></div>
+                ส่วนที่ 7 ระบบการช่วยเหลือด้วย Ai Chatbot
+             </a>
+        </div>
+
+    </div>
+
+</body>
+</html>
