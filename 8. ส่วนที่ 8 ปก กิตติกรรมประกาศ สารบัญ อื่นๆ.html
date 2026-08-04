@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2R Research Assistant - Complete Thesis Preliminary & Back Matter Generator</title>
+    
+    <!-- เรียกใช้งานไฟล์ .js จากในเครื่อง (Local) แทนการดึงจาก Internet -->
+    <script src="mammoth.browser.min.js"></script>
+    <script src="pdf.min.js"></script>
+    <script>
+        // ตั้งค่า Worker สำหรับ pdf.js ให้ดึงจากไฟล์ในเครื่อง
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #fdf6f5;
+            --card-bg: #ffffff;
+            --primary-color: #ffb3ba;
+            --text-color: #5c5a68;
+            --border-color: #ffe6e9;
+            --hover-color: #ff9eaa;
+            
+            --extract-btn: #e2cbfa;
+            --extract-hover: #d1b3f5;
+            --send-btn: #baffc9;
+            --send-hover: #9fe6b0;
+            --word-btn: #bae1ff;
+            --word-hover: #a0cff4;
+            --copy-btn: #ffffba;
+            --copy-hover: #e6e69a;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Sarabun', 'TH Sarabun New';
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(255, 179, 186, 0.15);
+            border: 2px solid var(--border-color);
+            height: fit-content;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            font-size: 1.3rem;
+            color: #e5828b;
+            margin-top: 0;
+            border-bottom: 2px dashed var(--border-color);
+            padding-bottom: 10px;
+        }
+        .param-group {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+        }
+        .param-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #8da4d0;
+        }
+        input[type="text"], input[type="range"] {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(255,179,186,0.5);
+        }
+        .workspace {
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(255, 179, 186, 0.15);
+            border: 2px solid var(--border-color);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #e5828b;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
+            background-color: #fffafb;
+            color: var(--text-color);
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background-color: #fff;
+        }
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            color: #4a4a4a;
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+        .btn-extract { background-color: var(--extract-btn); }
+        .btn-extract:hover { background-color: var(--extract-hover); }
+        .btn-send { background-color: var(--send-btn); }
+        .btn-send:hover { background-color: var(--send-hover); }
+        .btn-download { background-color: var(--word-btn); }
+        .btn-download:hover { background-color: var(--word-hover); }
+        .btn-copy { background-color: var(--copy-btn); }
+        .btn-copy:hover { background-color: var(--copy-hover); }
+        
+        .file-input-wrapper {
+            margin-bottom: 15px;
+            padding: 20px;
+            background-color: #fcf4f4;
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            text-align: center;
+        }
+        .action-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--hover-color); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <h2>🌸 ระบบนำเข้าเอกสารวิจัย</h2>
+        <p style="font-size: 0.9rem; color: #888;">รองรับไฟล์ .pdf, .docx, .txt</p>
+
+        <div class="param-group">
+            <label for="lmUrl">🔗 LM Studio URL:</label>
+            <input type="text" id="lmUrl" value="http://localhost:1234/v1/chat/completions" style="width:100%; padding:8px; box-sizing:border-box;">
+
+            <label for="modelName" style="margin-top:12px;">🤖 Model:</label>
+            <input type="text" id="modelName" value="gemma-4-e4b-it-qat" style="width:100%; padding:8px; box-sizing:border-box;">
+            
+            <label for="tempRange" style="margin-top:12px;">🌡️ Temperature (ความเป๊ะ):</label>
+            <input type="range" id="tempRange" min="0.1" max="1.0" step="0.1" value="0.2" style="width:100%;">
+            <span id="tempVal" style="display:block; text-align:center; font-weight:bold; color:var(--primary-color);">0.2</span>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="card">
+            <h3>1. 📄 นำเข้าไฟล์เอกสารวิจัย (บทที่ 1-5, บรรณานุกรม, บทคัดย่อ)</h3>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept=".pdf, .docx, .txt" style="width: 100%; font-family: inherit;">
+                <div class="btn-group" style="justify-content: center; margin-top: 15px;">
+                    <button class="btn btn-extract" onclick="extractFileText()">📥 ดึงข้อความจากไฟล์</button>
+                </div>
+                <div id="extractStatus" style="margin-top: 10px; font-size: 0.95rem; color: #a2b9ee; font-weight: bold;"></div>
+            </div>
+            
+            <label style="font-weight: bold; display: block; margin-bottom: 8px; color: #e5828b;">ข้อมูลดิบที่ดึงได้ (Context):</label>
+            <textarea id="userInputBox" rows="6" placeholder="ข้อความจากไฟล์จะปรากฏที่นี่..."></textarea>
+        </div>
+
+        <div class="card">
+            <h3>2. ✨ ร่างองค์ประกอบส่วนหน้าและส่วนท้าย (ปก, สารบัญ, อักษรย่อ, ภาคผนวก, ประวัติ)</h3>
+            <label style="font-weight: bold; display: block; margin-bottom: 8px; color: #e5828b;">คำสั่งควบคุม AI (System Prompt):</label>
+            <textarea id="systemPromptBox" rows="10">
+[ROLE]
+คุณคือผู้เชี่ยวชาญด้านการจัดทำรูปเล่มวิทยานิพนธ์และรายงานวิจัยฉบับสมบูรณ์ระดับสากล หน้าที่หลักของคุณคือการสกัด สังเคราะห์ และจัดทำ "ส่วนประกอบส่วนหน้า (Preliminary Pages)" และ "ส่วนประกอบส่วนท้าย (Back Matter)" จากเอกสารวิจัยที่ผู้ใช้ป้อนให้
+
+[CRITICAL RULE - PAGE BREAK]
+ระหว่างการเปลี่ยนส่วน/หัวข้อหลักทุกครั้ง คุณต้องพิมพ์แท็ก [PAGE_BREAK] บรรทัดเดียวโดดๆ เพื่อสั่งให้ระบบทำการขึ้นหน้าใหม่ในไฟล์ MS Word เสมอ
+
+[WORKFLOW & INSTRUCTIONS]
+จงเรียงลำดับการสร้างเอกสารตามโครงสร้างมาตรฐานวิจัย 11 ส่วน ดังนี้:
+
+1. ปกนอก และ ปกใน (Cover Pages):
+   - สกัดชื่อเรื่องงานวิจัยภาษาไทย และภาษาอังกฤษ (ถ้ามี)
+   - จัดรูปแบบข้อความเสนอรายงานวิจัย
+   - ใส่สัญลักษณ์ [ระบุไม่มี - ชื่อผู้วิจัย] [ระบุไม่มี - คณะ/สถาบัน] [ระบุไม่มี - ปีการศึกษา] หากในเอกสารไม่ได้ระบุไว้
+
+[PAGE_BREAK]
+
+2. บทคัดย่อภาษาไทย (Thai Abstract):
+   - ดึงเนื้อหาบทคัดย่อภาษาไทยจากเอกสารที่ผู้ใช้ป้อน หากไม่มีให้เขียนสรุปกระชับจากบทที่ 1-5 และระบุ [ระบุไม่มีในเอกสาร - สรุปขึ้นใหม่]
+   - พร้อมระบุ คำสำคัญ
+
+[PAGE_BREAK]
+
+3. บทคัดย่อภาษาอังกฤษ (English Abstract):
+   - ดึงเนื้อหา Abstract ภาษาอังกฤษ หรือแปลจากบทคัดย่อภาษาไทย และระบุ [ระบุไม่มีในเอกสาร - แปลขึ้นใหม่]
+   - พร้อมระบุ Keywords
+
+[PAGE_BREAK]
+
+4. กิตติกรรมประกาศ (Acknowledgements):
+   - ร่างคำกล่าวขอบคุณสละสลวยเป็นทางการ อ้างอิงบริบทจริงจากงานวิจัย (เช่น อาจารย์ที่ปรึกษา, บุคลากรกลุ่มตัวอย่าง, สถาบัน)
+   - หากไม่ระบุชื่อเฉพาะ ให้ใส่ [ระบุไม่มี - ชื่ออาจารย์ที่ปรึกษา] หรือ [ระบุไม่มี - หน่วยงานให้ทุน]
+
+[PAGE_BREAK]
+
+5. สารบัญ, สารบัญตาราง, สารบัญภาพ (Table of Contents, Tables, Figures):
+   - สกัดหัวข้อหลัก (บทที่ 1-5) และหัวข้อย่อยทั้งหมด
+   - กฎเหล็ก: ห้ามใส่เลขหน้าเด็ดขาด ให้ใช้จุดไข่ปลาแล้วลงท้ายด้วย "หน้า..."
+
+[PAGE_BREAK]
+
+6. คำอธิบายสัญลักษณ์และคำย่อ (List of Symbols & Abbreviations):
+   - สกัดสัญลักษณ์ สถิติ หรืออักษรย่อที่ใช้ในเล่ม (เช่น SD, Mean, p-value, AI, RAG)
+   - หากไม่มีในเอกสาร ให้สร้างตัวอย่างคำย่อที่พบในงานวิจัยนี้ขึ้นมา พร้อมระบุ [ระบุไม่มีในเอกสาร - ตัวอย่างคำย่อที่ใช้วิเคราะห์]
+
+[PAGE_BREAK]
+
+7. บรรณานุกรม / เอกสารอ้างอิง (Bibliography / References):
+   - ดึงรายการบรรณานุกรมทั้งหมดจากเอกสารต้นฉบับ หากไม่มีให้รวบรวมชื่อเอกสาร/ทฤษฎีที่ปรากฏในบทที่ 2 และระบุ [ระบุไม่มีส่วนบรรณานุกรม - รวบรวมจากเนื้อหา]
+
+[PAGE_BREAK]
+
+8. ภาคผนวก ก (Appendix A): รายชื่อผู้เชี่ยวชาญ / เครื่องมือวิจัย
+   - สกัดข้อมูลผู้เชี่ยวชาญ หรือ รายละเอียดเครื่องมือ
+   - หากไม่มี ให้สร้างโครงสร้างตัวอย่างพร้อมระบุ [ระบุไม่มีในเอกสาร - ตัวอย่างโครงสร้างภาคผนวก ก]
+
+[PAGE_BREAK]
+
+9. ภาคผนวก ข (Appendix B): ตัวอย่างเครื่องมือวิจัย / แบบสอบถาม / แบบประเมิน
+   - สกัดตัวอย่างแบบประเมิน หรือแบบสอบถามที่ใช้
+   - หากไม่มี ให้สร้างโครงสร้างตัวอย่างพร้อมระบุ [ระบุไม่มีในเอกสาร - ตัวอย่างโครงสร้างภาคผนวก ข]
+
+[PAGE_BREAK]
+
+10. ภาคผนวก ค (Appendix C): ผลการวิเคราะห์ข้อมูลดิบ / ภาพประกอบ
+    - สกัดผลสถิติเชิงลึก ภาพระบบ หรือภาพการดำเนินงาน
+    - หากไม่มี ให้สร้างโครงสร้างตัวอย่างพร้อมระบุ [ระบุไม่มีในเอกสาร - ตัวอย่างโครงสร้างภาคผนวก ค]
+
+[PAGE_BREAK]
+
+11. ประวัติผู้วิจัย (Curriculum Vitae / Author Biography):
+    - สกัดประวัติผู้วิจัย (ชื่อ-นามสกุล, ประวัติการศึกษา, ตำแหน่งปัจจุบัน, ประวัติการทำงาน)
+    - หากไม่มี ให้สร้างแบบฟอร์มประวัติผู้วิจัยพร้อมระบุ [ระบุไม่มีในเอกสาร - ตัวอย่างแบบฟอร์มประวัติผู้วิจัย]
+
+[TONE & STYLE]
+- ภาษาทางการเชิงวิชาการ (Formal Academic Tone)
+- ห้ามใช้เครื่องหมาย Markdown เช่น * หรือ # ในผลลัพธ์เด็ดขาด
+            </textarea>
+            
+            <div class="btn-group">
+                <button class="btn btn-send" onclick="submitToLocalAI()">🚀 ส่งข้อมูลให้ AI ประมวลผลแบบริ้ววิ่ง</button>
+            </div>
+
+            <div style="margin-top: 25px; border-top: 2px dashed var(--border-color); padding-top: 15px;">
+                <div class="action-header">
+                    <label style="font-weight: bold; color: #e5828b;">ร่างเนื้อหาส่วนหน้า-ส่วนท้าย (ผลลัพธ์แยกหน้า):</label>
+                    <div class="btn-group" style="margin-top: 0; gap: 8px;">
+                        <button class="btn btn-copy" style="padding: 8px 16px; font-size: 0.9rem;" onclick="copyOutputText()">📋 คัดลอกข้อความ</button>
+                        <button class="btn btn-download" style="padding: 8px 16px; font-size: 0.9rem;" onclick="exportToWord()">💾 ดาวน์โหลดเป็นไฟล์ Word (.doc)</button>
+                    </div>
+                </div>
+                <textarea id="outputBox" rows="15" placeholder="ผลลัพธ์จะค่อย ๆ วิ่งแสดงตรงนี้... (ระบบจะขึ้นหน้าใหม่อัตโนมัติเมื่อดาวน์โหลดเป็นไฟล์ Word)"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('tempRange').addEventListener('input', (e) => {
+        document.getElementById('tempVal').innerText = e.target.value;
+    });
+
+    // ทำความสะอาดข้อความ ตัดสัญลักษณ์ Markdown
+    function cleanAcademicText(text) {
+        return text.replace(/[*#_~`]/g, '');
+    }
+
+    // ==========================================
+    // 1. ระบบดึงข้อความจากไฟล์ (Extractor)
+    // ==========================================
+    async function extractFileText() {
+        const fileInput = document.getElementById('fileInput');
+        const statusText = document.getElementById('extractStatus');
+        const userInputBox = document.getElementById('userInputBox');
+        
+        if (!fileInput.files[0]) {
+            alert('กรุณาเลือกไฟล์ก่อนครับ');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const fileName = file.name.toLowerCase();
+        statusText.innerText = "⏳ กำลังดึงข้อความ... โปรดรอสักครู่";
+        userInputBox.value = "";
+
+        try {
+            if (fileName.endsWith('.txt')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userInputBox.value = e.target.result;
+                    statusText.innerText = "✅ ดึงข้อความจาก .txt สำเร็จ!";
+                };
+                reader.readAsText(file, 'UTF-8');
+            } 
+            else if (fileName.endsWith('.docx')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                userInputBox.value = result.value;
+                statusText.innerText = "✅ ดึงข้อความจาก Word สำเร็จ!";
+            } 
+            else if (fileName.endsWith('.pdf')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = "";
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + "\n\n";
+                }
+                userInputBox.value = fullText;
+                statusText.innerText = `✅ ดึงข้อความจาก PDF สำเร็จ! (รวม ${pdf.numPages} หน้า)`;
+            } 
+            else {
+                alert('ระบบรองรับเฉพาะไฟล์ .pdf, .docx และ .txt เท่านั้นครับ');
+                statusText.innerText = "❌ รูปแบบไฟล์ไม่รองรับ";
+            }
+        } catch (error) {
+            console.error(error);
+            statusText.innerText = "❌ เกิดข้อผิดพลาดในการดึงข้อความ";
+            alert("Error: " + error.message);
+        }
+    }
+
+    // ==========================================
+    // 2. ระบบส่งข้อมูลไปยัง LM Studio (Streaming)
+    // ==========================================
+    async function submitToLocalAI() {
+        const outputBox = document.getElementById('outputBox');
+        const rawText = document.getElementById('userInputBox').value.trim();
+        const systemPrompt = document.getElementById('systemPromptBox').value;
+        const lmUrl = document.getElementById('lmUrl').value;
+        const modelName = document.getElementById('modelName').value;
+        const temperature = parseFloat(document.getElementById('tempRange').value);
+
+        if (!rawText) {
+            alert("กรุณาอัปโหลดไฟล์และดึงข้อความก่อนส่งให้ AI ครับ");
+            return;
+        }
+
+        outputBox.value = "กำลังเชื่อมต่อเซิร์ฟเวอร์ Local... กรุณารอสักครู่\n";
+
+        const finalPrompt = `อ้างอิงจากข้อมูลต่อไปนี้:\n---\n\n${rawText}\n\n---\nคำสั่ง: จงทำตาม System Prompt ที่กำหนดไว้ โดยห้ามใช้สัญลักษณ์ * หรือ # เด็ดขาด และอย่าลืมใส่ [PAGE_BREAK] ในการแบ่งขึ้นหน้าใหม่`;
+
+        try {
+            const response = await fetch(lmUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: finalPrompt }
+                    ],
+                    temperature: temperature,
+                    stream: true 
+                })
+            });
+
+            if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อ LM Studio ได้ กรุณาตรวจสอบว่าเปิดเซิร์ฟเวอร์หรือยัง");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            outputBox.value = ""; 
+            let fullText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices[0].delta.content;
+                            if (content) {
+                                fullText += content;
+                                let cleanText = fullText.replace(/<\|channel>thought[\s\S]*?<channel\|>/g, '').trim();
+                                cleanText = cleanText.replace(/<\|channel>thought[\s\S]*/g, '').trim();
+                                
+                                cleanText = cleanAcademicText(cleanText);
+                                
+                                outputBox.value = cleanText;
+                                outputBox.scrollTop = outputBox.scrollHeight;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+        } catch (error) {
+            outputBox.value = "เกิดข้อผิดพลาด: " + error.message + "\n\nคำแนะนำ: ตรวจสอบว่าเปิดโปรแกรม LM Studio และ Local Server ทำงานอยู่หรือไม่";
+        }
+    }
+
+    // ==========================================
+    // 3. ระบบบันทึก Word โดยแยกขึ้นหน้าใหม่อัตโนมัติ (Page Break Support)
+    // ==========================================
+    function exportToWord() {
+        let rawContent = document.getElementById('outputBox').value;
+        if (!rawContent.trim()) {
+            alert('ไม่มีข้อมูลร่างเนื้อหาให้บันทึกครับ');
+            return;
+        }
+
+        // คลีนอักขระพิเศษ
+        rawContent = cleanAcademicText(rawContent);
+
+        // แยกเนื้อหาออกเป็นส่วนๆ ตามสัญลักษณ์ [PAGE_BREAK]
+        const sections = rawContent.split(/\[PAGE_BREAK\]/i);
+
+        // แปลงแต่ละส่วนเป็น HTML Paragraph พร้อมใส่คำสั่งขึ้นหน้าใหม่ (mso-break-type:section-break)
+        const formattedHtml = sections.map((secText, index) => {
+            const trimmedSec = secText.trim();
+            if (!trimmedSec) return '';
+
+            const paragraphs = trimmedSec.split('\n').filter(p => p.trim() !== '').map(p => {
+                return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+            }).join('');
+
+            // หน้าแรกไม่ต้องใส่ Page Break ส่วนหน้าที่ 2 เป็นต้นไปให้บังคับขึ้นหน้าใหม่
+            if (index === 0) {
+                return `<div>${paragraphs}</div>`;
+            } else {
+                return `<div style="page-break-before: always; mso-break-type: section-break;">${paragraphs}</div>`;
+            }
+        }).join('');
+
+        // กำหนดหน้ากระดาษวิจัย A4 และระยะขอบ 1.5 นิ้ว (3.81 ซม.) ซ้าย/บน และ 1 นิ้ว (2.54 ซม.) ขวา/ล่าง
+        const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <style>
+                @page WordSection1 {
+                    size: 21.0cm 29.7cm; /* A4 */
+                    margin: 3.81cm 2.54cm 2.54cm 3.81cm; /* บน ขวา ล่าง ซ้าย */
+                    mso-header-margin: 1.27cm;
+                    mso-footer-margin: 1.27cm;
+                    mso-paper-source: 0;
+                }
+                div.WordSection1 { page: WordSection1; }
+                body {
+                    font-family: 'TH Sarabun New', 'TH SarabunPSK', sans-serif;
+                    font-size: 16pt;
+                    color: windowtext;
+                }
+                p {
+                    margin-top: 0cm;
+                    margin-bottom: 0pt;
+                    text-indent: 1.5cm;
+                    text-align: justify;
+                    line-height: 1.0;
+                }
+            </style>
+        </head>
+        <body><div class="WordSection1">`;
+        
+        const footer = "</div></body></html>";
+        
+        const sourceHTML = header + formattedHtml + footer;
+        const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        
+        const file = document.createElement('a');
+        file.href = url;
+        file.download = 'รูปเล่มส่วนหน้าและส่วนท้าย_Academic_Format.doc';
+        file.click();
+        
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
+
+    function copyOutputText() {
+        const outputBox = document.getElementById('outputBox');
+        if (!outputBox.value.trim()) {
+            alert('ไม่มีเนื้อหาให้คัดลอกครับ');
+            return;
+        }
+        
+        // แปลง [PAGE_BREAK] เป็นเส้นแบ่งให้อ่านง่ายเมื่อคัดลอกลงคลิปบอร์ด
+        let cleanContent = cleanAcademicText(outputBox.value);
+        cleanContent = cleanContent.replace(/\[PAGE_BREAK\]/gi, '\n\n==================== (ขึ้นหน้าใหม่) ====================\n\n');
+        
+        // คัดลอกลงคลิปบอร์ด
+        navigator.clipboard.writeText(cleanContent).then(() => {
+            alert('📋 คัดลอกเนื้อหาลงคลิปบอร์ดเรียบร้อยแล้ว!');
+        }).catch(err => {
+            outputBox.select();
+            document.execCommand('copy');
+            alert('📋 คัดลอกเนื้อหาเรียบร้อยแล้ว!');
+        });
+    }
+</script>
+
+</body>
+</html>
