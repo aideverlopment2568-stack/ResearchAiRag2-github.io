@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เมนูรวมแอปพลิเคชันสร้างวิจัย (IntegrateMind AI)</title>
     
+    <!-- ใช้ Font Kanit หากต่อเน็ต แต่ถ้าระบบ Offline จะปรับเป็นฟอนต์มาตรฐานของเครื่องอัตโนมัติ -->
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <style>
@@ -32,9 +33,10 @@
             100% { background-position: 0% 50%; }
         }
 
+        /* ---------------- Header ---------------- */
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 50px;
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(15px);
             padding: 30px 60px;
@@ -44,10 +46,12 @@
             max-width: 900px;
             width: 100%;
             box-sizing: border-box;
+            position: relative;
+            z-index: 10;
         }
 
         .header h1 {
-            font-size: 2.4rem;
+            font-size: 2.2rem;
             background: linear-gradient(45deg, #ec008c, #fc6767);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -57,120 +61,92 @@
 
         .header p {
             color: #555;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             margin: 5px 0;
             font-weight: 500;
         }
 
-        .dashboard-wrapper {
-            max-width: 1100px;
+        /* ---------------- Flowchart Grid System ---------------- */
+        .flow-container {
             width: 100%;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            color: #2c3e50;
-            margin: 30px 0 20px 10px;
-            font-weight: 600;
-            border-bottom: 2px dashed rgba(255, 255, 255, 0.8);
-            padding-bottom: 10px;
+            max-width: 1200px;
             display: flex;
-            align-items: center;
-            gap: 10px;
+            justify-content: center;
+            position: relative;
         }
 
-        .grid-container {
+        /* ระบบ Grid 5 คอลัมน์ (ซ้าย, เส้นเชื่อม, กลาง, เส้นเชื่อม, ขวา) */
+        .flow-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
+            grid-template-columns: 320px 60px 350px 60px 320px;
+            grid-auto-rows: min-content;
+            align-items: center;
             width: 100%;
         }
 
+        /* ---------------- Button Styles ---------------- */
         .btn-app {
             display: flex;
             align-items: center;
-            padding: 18px 25px;
-            font-size: 1.1rem;
+            padding: 16px 20px;
+            font-size: 1.05rem;
             font-weight: 500;
             text-decoration: none;
             color: white;
-            border-radius: 20px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             border: 2px solid transparent;
+            width: 100%;
+            box-sizing: border-box;
             position: relative;
-            overflow: hidden;
+            z-index: 5;
+            line-height: 1.4;
         }
 
         .btn-app:hover {
-            transform: translateY(-5px) scale(1.02);
+            transform: translateY(-3px) scale(1.02);
             filter: brightness(1.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 10;
         }
 
         /* Colors */
         .bg-red { background: linear-gradient(135deg, #FF416C, #FF4B2B); }
-        .bg-red:hover { box-shadow: 0 12px 25px rgba(255, 65, 108, 0.4); }
-
         .bg-purple-dark { background: linear-gradient(135deg, #4A00E0, #8E2DE2); }
-        .bg-purple-dark:hover { box-shadow: 0 12px 25px rgba(142, 45, 226, 0.4); }
-
         .bg-blue-sea { background: linear-gradient(135deg, #00B4DB, #0083B0); }
-        .bg-blue-sea:hover { box-shadow: 0 12px 25px rgba(0, 180, 219, 0.4); }
-
         .bg-green { background: linear-gradient(135deg, #11998e, #38ef7d); }
-        .bg-green:hover { box-shadow: 0 12px 25px rgba(56, 239, 125, 0.4); }
-
-        .bg-yellow { background: linear-gradient(135deg, #F2994A, #F2C94C); color: #1d3557; text-shadow: none; }
-        .bg-yellow:hover { box-shadow: 0 12px 25px rgba(242, 153, 74, 0.4); }
-
+        .bg-yellow { background: linear-gradient(135deg, #F2994A, #F2C94C); color: #1d3557; }
         .bg-pink { background: linear-gradient(135deg, #ec008c, #fc6767); }
-        .bg-pink:hover { box-shadow: 0 12px 25px rgba(236, 0, 140, 0.4); }
-
         .bg-indigo { background: linear-gradient(135deg, #7F00FF, #E100FF); }
-        .bg-indigo:hover { box-shadow: 0 12px 25px rgba(127, 0, 255, 0.4); }
-
         .bg-magic { background: linear-gradient(135deg, #DA22FF, #9733EE); }
-        .bg-magic:hover { box-shadow: 0 12px 25px rgba(218, 34, 255, 0.6); }
-
         .bg-blue-light { background: linear-gradient(135deg, #00c6ff, #0072ff); }
-        .bg-blue-light:hover { box-shadow: 0 12px 25px rgba(0, 198, 255, 0.4); }
-
         .bg-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
-        .bg-cyan:hover { box-shadow: 0 12px 25px rgba(6, 182, 212, 0.4); }
-
-        .bg-orange { background: linear-gradient(135deg, #fb923c, #fdba74); color: #1d3557; text-shadow: none; }
-        .bg-orange:hover { box-shadow: 0 12px 25px rgba(251, 146, 60, 0.4); }
-
+        .bg-orange { background: linear-gradient(135deg, #fb923c, #fdba74); color: #1d3557; }
         .bg-teal { background: linear-gradient(135deg, #20b2aa, #48d1cc); }
-        .bg-teal:hover { box-shadow: 0 12px 25px rgba(32, 178, 170, 0.4); }
-
         .bg-ai-bot { 
             background: linear-gradient(135deg, #FF9A9E, #FECFEF); 
             color: #ff3366; 
-            text-shadow: none;
             border: 2px solid #ff99cc;
             font-weight: 600;
         }
-        .bg-ai-bot:hover { box-shadow: 0 12px 25px rgba(255, 154, 158, 0.6); }
 
         .icon-box {
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            min-width: 48px;
-            height: 48px;
+            min-width: 42px;
+            height: 42px;
             background: rgba(255, 255, 255, 0.25);
-            border-radius: 14px;
-            margin-right: 20px;
+            border-radius: 12px;
+            margin-right: 15px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        
         .bg-yellow .icon-box, .bg-orange .icon-box, .bg-ai-bot .icon-box { background: rgba(255, 255, 255, 0.6); }
 
         .icon-box svg {
-            width: 26px;
-            height: 26px;
+            width: 22px;
+            height: 22px;
             stroke: currentColor;
             fill: none;
             stroke-width: 2;
@@ -178,15 +154,70 @@
             stroke-linejoin: round;
         }
 
-        .ai-emoji {
-            font-size: 28px;
+        /* ---------------- แก้ไข 3: รูปโปรไฟล์น้อง AI ฝังตัว ---------------- */
+        .ai-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+            border: 2px solid #fff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            background-color: #fff; /* เผื่อภาพโปร่งใส */
         }
 
-        @media (max-width: 768px) {
-            .header { padding: 25px 20px; }
-            .header h1 { font-size: 1.8rem; }
-            .section-title { font-size: 1.2rem; }
-            .grid-container { grid-template-columns: 1fr; }
+        /* ---------------- Connector Lines (CSS Pure) ---------------- */
+        .flow-connector { position: relative; width: 100%; height: 100%; z-index: 1; }
+        .line-v { position: absolute; width: 5px; background: currentColor; left: 50%; transform: translateX(-2.5px); }
+        .line-h { position: absolute; height: 5px; background: currentColor; top: 50%; transform: translateY(-2.5px); }
+        .arrow-right { position: absolute; border-left: 14px solid currentColor; border-top: 10px solid transparent; border-bottom: 10px solid transparent; top: 50%; transform: translateY(-50%); right: -2px; }
+        .arrow-left { position: absolute; border-right: 14px solid currentColor; border-top: 10px solid transparent; border-bottom: 10px solid transparent; top: 50%; transform: translateY(-50%); left: -2px; }
+        
+        /* ---------------- แก้ไข 1: จัดสมดุลลูกศรให้พอดีกัน ---------------- */
+        .arrow-down-main { 
+            position: relative; 
+            height: 55px; /* กำหนดความสูงตายตัว */
+            width: 100%; 
+            z-index: 1; 
+            margin: 5px 0; /* เพิ่มระยะห่างบน-ล่างให้สมดุล */
+        }
+        .arrow-down-main::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 5px; background: #1e293b; transform: translateX(-2.5px); }
+        .arrow-down-main::after { content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); border-top: 14px solid #1e293b; border-left: 12px solid transparent; border-right: 12px solid transparent; }
+
+        /* Path Colors */
+        .c-red { color: #e11d48; }
+        .c-brown { color: #8b4513; }
+        .c-green { color: #10b981; }
+        .c-blue { color: #0284c7; }
+        .c-black { color: #1e293b; }
+
+        /* ---------------- Responsive (Mobile View) ---------------- */
+        .mobile-header { display: none; }
+
+        @media (max-width: 1100px) {
+            .flow-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                max-width: 450px;
+                width: 100%;
+            }
+            .flow-connector, .arrow-down-main { display: none !important; }
+            .mobile-header {
+                display: block;
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: #fff;
+                background: linear-gradient(135deg, #1d3557, #457b9d);
+                text-align: center;
+                padding: 12px;
+                border-radius: 12px;
+                margin-top: 25px;
+                margin-bottom: 5px;
+                width: 100%;
+                box-sizing: border-box;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
         }
     </style>
 </head>
@@ -196,90 +227,162 @@
         <h1>✨ เมนูรวมแอปพลิเคชันสร้างวิจัย</h1>
         <p>IntegrateMind AI Research (Local PC & GitHub Pages)</p>
         <hr style="width: 80px; border: 2px solid #ec008c; border-radius: 5px; margin: 15px auto; border-top: none;">
-        <p style="font-size: 1rem;">คลิกเพื่อเปิดใช้งานแอปพลิเคชัน</p>
+        <p style="font-size: 0.95rem;">คลิกเพื่อเปิดใช้งานแอปพลิเคชันตามลำดับ FlowChart</p>
     </div>
 
-    <div class="dashboard-wrapper">
-        
-        <!-- ส่วนที่ 1: ส่วนหลัก -->
-        <div class="section-title">📌 ส่วนหลัก (Main Phases)</div>
-        <div class="grid-container">
-            <a href="1. เริ่มต้นเขียนเรื่องวิเคราะห์ปัญหา.html" class="btn-app bg-red">
+    <div class="flow-container">
+        <div class="flow-grid">
+            
+            <!-- Mobile Headers (Hidden on PC) -->
+            <div class="mobile-header">📌 ส่วนหลัก (Main Phases)</div>
+
+            <!-- Row 1: 1. วิเคราะห์ปัญหา -->
+            <a href="1. เริ่มต้นเขียนเรื่องวิเคราะห์ปัญหา.html" class="btn-app bg-red" style="grid-area: 1/3/2/4;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
                 1. เริ่มต้นเขียนเรื่องวิเคราะห์ปัญหา
-            </a>	
+            </a>
             
-            <a href="2. เขียนวิจัยบทที่1 บทนำ.html" class="btn-app bg-purple-dark">
-                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></div>
+            <!-- ---------------- แก้ไข 2: ดึงขึ้น และ ปรับระยะห่าง AI Bot กับ Token ---------------- -->
+            <div style="grid-area: 1/5/3/6; display: flex; flex-direction: column; gap: 40px; margin-top: -20px;">
+                <div class="mobile-header">🛠️ ระบบช่วยเหลือ (AI Helpers)</div>
+                <a href="7. ส่วนที่ 7 ระบบการช่วยเหลือด้วย Ai Chatbot.html" class="btn-app bg-ai-bot">
+                    <!-- แทนที่ Icon ด้วยแท็ก img สำหรับใส่น้อง AI -->
+                    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Nong AI" class="ai-avatar">
+                    ส่วนที่ 7 ระบบการช่วยเหลือด้วย Ai Chatbot
+                </a>
+                <a href="1. ส่วนที่ 1 นับจำนวน Token AI.html" class="btn-app bg-orange">
+                    <div class="icon-box"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></div>
+                    ส่วนที่ 1 นับจำนวน Token AI
+                </a>
+            </div>
+
+            <!-- Row 2: Down Arrow -->
+            <div class="arrow-down-main" style="grid-area: 2/3/3/4;"></div>
+
+            <!-- Row 3: 2. บทที่ 1 + Connectors -->
+            <a href="2. เขียนวิจัยบทที่1 บทนำ.html" class="btn-app bg-purple-dark" style="grid-area: 3/3/4/4;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
                 2. เขียนวิจัยบทที่ 1 บทนำ
             </a>
-        
-            <a href="3. เขียนวิจัยบทที่2 ทบทวนวรรณกรรม.html" class="btn-app bg-blue-sea">
-                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
-                3. เขียนวิจัยบทที่ 2 ทบทวนวรรณกรรม
-            </a>
-        
-            <a href="4. เขียนวิจัยบทที่3 วิธีการดำเนินการวิจัย.html" class="btn-app bg-green">
-                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M9 2v4.46l-6.15 9.22A2 2 0 0 0 4.51 19h14.98a2 2 0 0 0 1.66-3.32L15 6.46V2"></path><path d="M6 2h12"></path><path d="M6 14h12"></path></svg></div>
-                4. เขียนวิจัยบทที่ 3 วิธีการดำเนินการวิจัย
-            </a>
-
-            <a href="5. เขียนวิจัยบทที่4 ผลการวิจัย.html" class="btn-app bg-yellow">
-                <div class="icon-box"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
-                5. เขียนวิจัยบทที่ 4 ผลการวิจัย
-            </a>
-
-            <a href="6. เขียนวิจัยบทที่5 สรุป อธิปรายผลการวิจัยและข้อเสนอแนะ.html" class="btn-app bg-pink">
-                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
-                6. เขียนวิจัยบทที่ 5 สรุปและอภิปรายผล
-            </a>
-
-            <a href="7. เขียน Abstract Research.html" class="btn-app bg-magic">
-                <div class="icon-box"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
-                7. เขียน Abstract Research
-            </a>
-        </div>
-
-        <!-- ส่วนที่ 2: ส่วนเสริม -->
-        <div class="section-title" style="margin-top: 50px;">🛠️ ส่วนเสริม (Tools & Utilities)</div>
-        <div class="grid-container">
-            
-            <a href="1. ส่วนที่ 1 นับจำนวน Token AI.html" class="btn-app bg-orange">
-                <div class="icon-box"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></div>
-                ส่วนที่ 1 นับจำนวน Token AI
-            </a>
-
-            <a href="2. ส่วนที่ 2 คำนวณ G power.html" class="btn-app bg-indigo">
+            <!-- แขนซ้าย (เริ่มแถบแดงเชื่อม) -->
+            <div class="flow-connector c-red" style="grid-area: 3/2/4/3;">
+                <div class="line-h" style="right: 0; width: 50%;"></div>
+                <div class="line-v" style="top: 50%; bottom: 0;"></div>
+            </div>
+            <!-- แขนขวา ไป G Power -->
+            <div class="flow-connector c-brown" style="grid-area: 3/4/4/5;">
+                <div class="line-h" style="left: 0; width: 100%;"></div>
+                <div class="arrow-right"></div>
+            </div>
+            <a href="2. ส่วนที่ 2 คำนวณ G power.html" class="btn-app bg-indigo" style="grid-area: 3/5/4/6;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
                 ส่วนที่ 2 คำนวณ G power
             </a>
 
-            <a href="3. ส่วนที่ 3 สรุปสังเคราะห์ทบทวนวรรณกรรมบทที่ 2.html" class="btn-app bg-indigo">
-                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div>
+            <!-- Row 4: Down Arrow + เส้นแดงเชื่อมลงมา -->
+            <div class="arrow-down-main" style="grid-area: 4/3/5/4;"></div>
+            <div class="flow-connector c-red" style="grid-area: 4/2/5/3;">
+                <div class="line-v" style="top: 0; bottom: 0;"></div>
+            </div>
+
+            <!-- Row 5: 3. บทที่ 2 + แขนซ้ายเข้าเขียนโครงร่าง + แขนขวาไปวรรณกรรม -->
+            <a href="3. เขียนวิจัยบทที่2 ทบทวนวรรณกรรม.html" class="btn-app bg-blue-sea" style="grid-area: 5/3/6/4;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
+                3. เขียนวิจัยบทที่ 2 ทบทวนวรรณกรรม
+            </a>
+            <!-- เส้นแดงเชื่อมซ้ายกลาง (พร้อมลูกศรพุ่งเข้า 5. โครงร่าง) -->
+            <div class="flow-connector c-red" style="grid-area: 5/2/6/3;">
+                <div class="line-v" style="top: 0; bottom: 0;"></div>
+                <div class="line-h" style="right: 0; width: 50%;"></div>
+                <div class="line-h" style="left: 0; width: 50%;"></div>
+                <div class="arrow-left"></div>
+            </div>
+            <a href="5. ส่วนที่ 5 เขียนโครงร่างงานวิจัยบทที่ 1ถึง3 ส่งประเมิน.html" class="btn-app bg-blue-light" style="grid-area: 5/1/6/2;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path></svg></div>
+                ส่วนที่ 5 เขียนโครงร่างวิจัยส่งประเมิน
+            </a>
+            <!-- เส้นเขียวเชื่อมขวาไปสังเคราะห์วรรณกรรม -->
+            <div class="flow-connector c-green" style="grid-area: 5/4/6/5;">
+                <div class="line-h" style="left: 0; width: 100%;"></div>
+                <div class="arrow-right"></div>
+            </div>
+            <a href="3. ส่วนที่ 3 สรุปสังเคราะห์ทบทวนวรรณกรรมบทที่ 2.html" class="btn-app bg-indigo" style="grid-area: 5/5/6/6;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path></svg></div>
                 ส่วนที่ 3 สรุปสังเคราะห์ทบทวนวรรณกรรม
             </a>
 
-            <a href="4. ส่วนที่ 4 สร้างระบบสมมุติข้อมูลจากแบบสอบถาม.html" class="btn-app bg-cyan">
+            <!-- Row 6: Down Arrow + เส้นแดงเชื่อมลงมา -->
+            <div class="arrow-down-main" style="grid-area: 6/3/7/4;"></div>
+            <div class="flow-connector c-red" style="grid-area: 6/2/7/3;">
+                <div class="line-v" style="top: 0; bottom: 0;"></div>
+            </div>
+
+            <!-- Row 7: 4. บทที่ 3 + จบแถบแดง -->
+            <a href="4. เขียนวิจัยบทที่3 วิธีการดำเนินการวิจัย.html" class="btn-app bg-green" style="grid-area: 7/3/8/4;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M9 2v4.46l-6.15 9.22A2 2 0 0 0 4.51 19h14.98a2 2 0 0 0 1.66-3.32L15 6.46V2"></path></svg></div>
+                4. เขียนวิจัยบทที่ 3 วิธีการดำเนินการวิจัย
+            </a>
+            <!-- เส้นแดงจบมุมล่าง -->
+            <div class="flow-connector c-red" style="grid-area: 7/2/8/3;">
+                <div class="line-h" style="right: 0; width: 50%;"></div>
+                <div class="line-v" style="top: 0; height: 50%;"></div>
+            </div>
+
+            <!-- Row 8: Down Arrow -->
+            <div class="arrow-down-main" style="grid-area: 8/3/9/4;"></div>
+
+            <!-- Row 9: 5. บทที่ 4 + แขนซ้าย + แขนขวา -->
+            <a href="5. เขียนวิจัยบทที่4 ผลการวิจัย.html" class="btn-app bg-yellow" style="grid-area: 9/3/10/4;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
+                5. เขียนวิจัยบทที่ 4 ผลการวิจัย
+            </a>
+            <!-- เส้นดำเชื่อมซ้ายไป เรียบเรียงใหม่ -->
+            <div class="flow-connector c-black" style="grid-area: 9/2/10/3;">
+                <div class="line-h" style="left: 0; width: 100%;"></div>
+                <div class="arrow-left"></div>
+            </div>
+            <a href="6. ส่วนที่ 6 เรียบเรียงบทที่ 1 ถึง 5  ใหม่.html" class="btn-app bg-teal" style="grid-area: 9/1/10/2;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg></div>
+                ส่วนที่ 6 เรียบเรียงบทที่ 1 ถึง 5 ใหม่
+            </a>
+            <!-- เส้นน้ำเงินเชื่อมขวาไป สมมุติข้อมูล -->
+            <div class="flow-connector c-blue" style="grid-area: 9/4/10/5;">
+                <div class="line-h" style="left: 0; width: 100%;"></div>
+                <div class="arrow-right"></div>
+            </div>
+            <a href="4. ส่วนที่ 4 สร้างระบบสมมุติข้อมูลจากแบบสอบถาม.html" class="btn-app bg-cyan" style="grid-area: 9/5/10/6;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg></div>
                 ส่วนที่ 4 สร้างระบบสมมุติข้อมูล
             </a>
-                
-            <a href="5. ส่วนที่ 5 เขียนโครงร่างงานวิจัยบทที่ 1ถึง3 ส่งประเมิน.html" class="btn-app bg-blue-light">
-               <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div>
-               ส่วนที่ 5 เขียนโครงร่างวิจัยส่งประเมิน
+
+            <!-- Row 10: Down Arrow -->
+            <div class="arrow-down-main" style="grid-area: 10/3/11/4;"></div>
+
+            <!-- Row 11: 6. บทที่ 5 -->
+            <a href="6. เขียนวิจัยบทที่5 สรุป อธิปรายผลการวิจัยและข้อเสนอแนะ.html" class="btn-app bg-pink" style="grid-area: 11/3/12/4;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
+                6. เขียนวิจัยบทที่ 5 สรุปและอภิปรายผล
             </a>
 
-            <a href="6. ส่วนที่ 6 เรียบเรียงบทที่ 1 ถึง 5 ใหม่.html" class="btn-app bg-teal">
-                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg></div>
-                ส่วนที่ 6 เรียบเรียงบทที่ 1 ถึง 5 ใหม่
-             </a>
+            <!-- Row 12: Down Arrow -->
+            <div class="arrow-down-main" style="grid-area: 12/3/13/4;"></div>
 
-             <a href="7. ส่วนที่ 7 ระบบการช่วยเหลือด้วย Ai Chatbot.html" class="btn-app bg-ai-bot">
-                <div class="icon-box"><span class="ai-emoji">🤖✨</span></div>
-                ส่วนที่ 7 ระบบการช่วยเหลือด้วย Ai Chatbot
-             </a>
+            <!-- Row 13: 7. Abstract -->
+            <a href="7. เขียน Abstract Research.html" class="btn-app bg-magic" style="grid-area: 13/3/14/4;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
+                7. เขียน Abstract Research
+            </a>
+
+            <!-- Row 14: Down Arrow -->
+            <div class="arrow-down-main" style="grid-area: 14/3/15/4;"></div>
+
+            <!-- Row 15: 8. ปก กิตติกรรมประกาศ ภาคผนวก (ปุ่มใหม่) -->
+            <a href="8. ส่วนที่ 8 ปก กิตติกรรมประกาศ สารบัญ อื่นๆ.html" class="btn-app bg-purple-dark" style="grid-area: 15/3/16/4;">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                8. ส่วนที่ 8 ปก กิตติกรรมประกาศ สารบัญ อื่นๆ
+            </a>
+
         </div>
-
     </div>
 
 </body>
