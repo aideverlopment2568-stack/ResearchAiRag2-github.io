@@ -164,7 +164,7 @@
 
         <div class="param-group">
             <label for="modelName">Model (LM Studio):</label>
-            <input type="text" id="modelName" value="gemma-4-e4b-it" style="width:100%; padding:6px; box-sizing:border-box;">
+            <input type="text" id="modelName" value="gemma-4-e4b-it-qat" style="width:100%; padding:6px; box-sizing:border-box;">
             
             <label for="tempRange" style="margin-top:10px;">Temperature (ความเป๊ะ):</label>
             <input type="range" id="tempRange" min="0.1" max="1.0" step="0.1" value="0.3" style="width:100%;">
@@ -212,7 +212,7 @@ const templates = {
       notice: "สกัดข้อมูล 5W1H/KPI และวิเคราะห์พิกัดรอยร้าวด้วย House Model (ตั้งค่า Temperature 0.1-0.2)",
       system: `
     # Context
-    ผู้ใช้จะป้อน "ข้อมูลดิบจากการสังเกตการณ์หน้างาน" (Raw Field Observation Data) เพื่อให้คุณทำหน้าที่ 2 ส่วนคือ 1) สกัดบริบทแวดล้อมที่สำคัญ และ 2) แปลงข้อมูลให้อยู่ในรูปแบบของ **'House Model'** เพื่อใช้เป็นข้อมูลสะสม (Context Accumulation) ในการทำ Root Cause Analysis (RCA) ในเฟสถัดไป
+    ผู้ใช้จะป้อน "ข้อมูลดิบจากการสังเกตการณ์หน้างาน" (Raw Field Observation Data) กลุ่มเป้าหมาย สถานที่ทำวิจัย และเวลา ระบุการเก็บข้อมูล  เพื่อให้คุณทำหน้าที่ 2 ส่วนคือ 1) สกัดบริบทแวดล้อมที่สำคัญ และ 2) แปลงข้อมูลให้อยู่ในรูปแบบของ **'House Model'** เพื่อใช้เป็นข้อมูลสะสม (Context Accumulation) ในการทำ Root Cause Analysis (RCA) ในเฟสถัดไป
 
     # [1. Role & Persona]
     คุณคือ "วิศวกรระบบและผู้เชี่ยวชาญด้านการระบุปัญหา" (System Engineer & Problem Identification Expert) มีความสามารถในการอ่านจับใจความ สกัดข้อมูลบริบทอย่างแม่นยำ และจัดหมวดหมู่ความบกพร่องเชิงโครงสร้างได้อย่างเฉียบขาด
@@ -238,6 +238,8 @@ const templates = {
     * **Where (สถานที่/หน่วยงาน):** [ระบุพื้นที่เกิดปัญหา]
     * **What (ภารกิจหลัก):** [ระบุสิ่งที่กำลังพยายามทำ]
     * **KPI / ข้อมูลสนับสนุน:** [ระบุตัวเลข สถิติ หรือสถานการณ์ความรุนแรงที่ปรากฏ]
+	* **Time (ระยะเวลาเร่ิ่มทำวิจัย):** [ระบุระยะเวลาเริ่มต้น ถึงระยะเวลาสิ้นสุด]
+	* **Process (ดำเนินการ):** [ระบุวิธีการทำสรุปรายละเอียดให้กระชับ]
 	* ** The Event (เกิดอะไรขึ้น): ปัญหาหรือรอยร้าวที่พบ [ระบุ ค่าผิดพลาด, ล่าช้า, ข้อมูลไม่เชื่อมโยงกัน]
 	* ** Policy   [ระบุ นโยบาย ระเบียบ พรบ.วิชาชีพที่เกี่ยวข้อง]
 	* ** คู่มือ วิชาการ   [ระบุ เรื่องที่เกี่ยวข้อง]
