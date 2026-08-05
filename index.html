@@ -154,7 +154,7 @@
             stroke-linejoin: round;
         }
 
-        /* ---------------- แก้ไข 3: รูปโปรไฟล์น้อง AI ฝังตัว ---------------- */
+        /* รูปโปรไฟล์น้อง AI ฝังตัว */
         .ai-avatar {
             width: 48px;
             height: 48px;
@@ -163,7 +163,7 @@
             object-fit: cover;
             border: 2px solid #fff;
             box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-            background-color: #fff; /* เผื่อภาพโปร่งใส */
+            background-color: #fff;
         }
 
         /* ---------------- Connector Lines (CSS Pure) ---------------- */
@@ -173,18 +173,26 @@
         .arrow-right { position: absolute; border-left: 14px solid currentColor; border-top: 10px solid transparent; border-bottom: 10px solid transparent; top: 50%; transform: translateY(-50%); right: -2px; }
         .arrow-left { position: absolute; border-right: 14px solid currentColor; border-top: 10px solid transparent; border-bottom: 10px solid transparent; top: 50%; transform: translateY(-50%); left: -2px; }
         
-        /* ---------------- แก้ไข 1: จัดสมดุลลูกศรให้พอดีกัน ---------------- */
+        /* ---------------- จัดสมดุลลูกศรแกนกลาง ---------------- */
         .arrow-down-main { 
             position: relative; 
-            height: 55px; /* กำหนดความสูงตายตัว */
+            height: 55px; 
             width: 100%; 
             z-index: 1; 
-            margin: 5px 0; /* เพิ่มระยะห่างบน-ล่างให้สมดุล */
+            margin: 5px 0; 
         }
         .arrow-down-main::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 5px; background: #1e293b; transform: translateX(-2.5px); }
         .arrow-down-main::after { content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); border-top: 14px solid #1e293b; border-left: 12px solid transparent; border-right: 12px solid transparent; }
 
-        /* Path Colors */
+        /* ---------------- เส้นเชื่อมซ้าย (แดงและดำคู่ขนาน) ---------------- */
+        .v-red { position: absolute; width: 5px; background: #e11d48; left: 35%; transform: translateX(-2.5px); z-index: 2; }
+        .v-black { position: absolute; width: 5px; background: #1e293b; left: 65%; transform: translateX(-2.5px); z-index: 1; }
+        .h-red { position: absolute; height: 5px; background: #e11d48; top: 50%; transform: translateY(-2.5px); z-index: 2; }
+        .h-black { position: absolute; height: 5px; background: #1e293b; top: 50%; transform: translateY(-2.5px); z-index: 1; }
+        .arrow-left-red { position: absolute; border-right: 14px solid #e11d48; border-top: 10px solid transparent; border-bottom: 10px solid transparent; top: 50%; transform: translateY(-50%); left: -2px; z-index: 2; }
+        .arrow-left-black { position: absolute; border-right: 14px solid #1e293b; border-top: 10px solid transparent; border-bottom: 10px solid transparent; top: 50%; transform: translateY(-50%); left: -2px; z-index: 1; }
+
+        /* Path Colors (ทั่วไป) */
         .c-red { color: #e11d48; }
         .c-brown { color: #8b4513; }
         .c-green { color: #10b981; }
@@ -242,11 +250,10 @@
                 1. เริ่มต้นเขียนเรื่องวิเคราะห์ปัญหา
             </a>
             
-            <!-- ---------------- แก้ไข 2: ดึงขึ้น และ ปรับระยะห่าง AI Bot กับ Token ---------------- -->
+            <!-- ดึงขึ้น และ ปรับระยะห่าง AI Bot กับ Token -->
             <div style="grid-area: 1/5/3/6; display: flex; flex-direction: column; gap: 40px; margin-top: -20px;">
                 <div class="mobile-header">🛠️ ระบบช่วยเหลือ (AI Helpers)</div>
                 <a href="7. ส่วนที่ 7 ระบบการช่วยเหลือด้วย Ai Chatbot.html" class="btn-app bg-ai-bot">
-                    <!-- แทนที่ Icon ด้วยแท็ก img สำหรับใส่น้อง AI -->
                     <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Nong AI" class="ai-avatar">
                     ส่วนที่ 7 ระบบการช่วยเหลือด้วย Ai Chatbot
                 </a>
@@ -264,10 +271,13 @@
                 <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
                 2. เขียนวิจัยบทที่ 1 บทนำ
             </a>
-            <!-- แขนซ้าย (เริ่มแถบแดงเชื่อม) -->
-            <div class="flow-connector c-red" style="grid-area: 3/2/4/3;">
-                <div class="line-h" style="right: 0; width: 50%;"></div>
-                <div class="line-v" style="top: 50%; bottom: 0;"></div>
+            <!-- แขนซ้าย (แถบแดงและแถบดำเชื่อม) -->
+            <div class="flow-connector" style="grid-area: 3/2/4/3;">
+                <div class="h-red" style="right: 0; width: 65%;"></div>
+                <div class="v-red" style="top: 50%; bottom: 0;"></div>
+                
+                <div class="h-black" style="right: 0; width: 35%;"></div>
+                <div class="v-black" style="top: 50%; bottom: 0;"></div>
             </div>
             <!-- แขนขวา ไป G Power -->
             <div class="flow-connector c-brown" style="grid-area: 3/4/4/5;">
@@ -279,23 +289,26 @@
                 ส่วนที่ 2 คำนวณ G power
             </a>
 
-            <!-- Row 4: Down Arrow + เส้นแดงเชื่อมลงมา -->
+            <!-- Row 4: Down Arrow + เส้นคู่เชื่อมลงมา -->
             <div class="arrow-down-main" style="grid-area: 4/3/5/4;"></div>
-            <div class="flow-connector c-red" style="grid-area: 4/2/5/3;">
-                <div class="line-v" style="top: 0; bottom: 0;"></div>
+            <div class="flow-connector" style="grid-area: 4/2/5/3;">
+                <div class="v-red" style="top: 0; bottom: 0;"></div>
+                <div class="v-black" style="top: 0; bottom: 0;"></div>
             </div>
 
-            <!-- Row 5: 3. บทที่ 2 + แขนซ้ายเข้าเขียนโครงร่าง + แขนขวาไปวรรณกรรม -->
+            <!-- Row 5: 3. บทที่ 2 + แขนซ้าย + แขนขวา -->
             <a href="3. เขียนวิจัยบทที่2 ทบทวนวรรณกรรม.html" class="btn-app bg-blue-sea" style="grid-area: 5/3/6/4;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
                 3. เขียนวิจัยบทที่ 2 ทบทวนวรรณกรรม
             </a>
-            <!-- เส้นแดงเชื่อมซ้ายกลาง (พร้อมลูกศรพุ่งเข้า 5. โครงร่าง) -->
-            <div class="flow-connector c-red" style="grid-area: 5/2/6/3;">
-                <div class="line-v" style="top: 0; bottom: 0;"></div>
-                <div class="line-h" style="right: 0; width: 50%;"></div>
-                <div class="line-h" style="left: 0; width: 50%;"></div>
-                <div class="arrow-left"></div>
+            <!-- เส้นแดงเชื่อมซ้ายเข้าส่วนที่ 5 และเส้นดำผ่านรับข้อมูลลงไป -->
+            <div class="flow-connector" style="grid-area: 5/2/6/3;">
+                <div class="v-red" style="top: 0; bottom: 0;"></div>
+                <div class="h-red" style="left: 0; width: 100%;"></div>
+                <div class="arrow-left-red"></div>
+                
+                <div class="v-black" style="top: 0; bottom: 0;"></div>
+                <div class="h-black" style="right: 0; width: 35%;"></div>
             </div>
             <a href="5. ส่วนที่ 5 เขียนโครงร่างงานวิจัยบทที่ 1ถึง3 ส่งประเมิน.html" class="btn-app bg-blue-light" style="grid-area: 5/1/6/2;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path></svg></div>
@@ -311,35 +324,43 @@
                 ส่วนที่ 3 สรุปสังเคราะห์ทบทวนวรรณกรรม
             </a>
 
-            <!-- Row 6: Down Arrow + เส้นแดงเชื่อมลงมา -->
+            <!-- Row 6: Down Arrow + เส้นคู่เชื่อมลงมา -->
             <div class="arrow-down-main" style="grid-area: 6/3/7/4;"></div>
-            <div class="flow-connector c-red" style="grid-area: 6/2/7/3;">
-                <div class="line-v" style="top: 0; bottom: 0;"></div>
+            <div class="flow-connector" style="grid-area: 6/2/7/3;">
+                <div class="v-red" style="top: 0; bottom: 0;"></div>
+                <div class="v-black" style="top: 0; bottom: 0;"></div>
             </div>
 
-            <!-- Row 7: 4. บทที่ 3 + จบแถบแดง -->
+            <!-- Row 7: 4. บทที่ 3 -->
             <a href="4. เขียนวิจัยบทที่3 วิธีการดำเนินการวิจัย.html" class="btn-app bg-green" style="grid-area: 7/3/8/4;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M9 2v4.46l-6.15 9.22A2 2 0 0 0 4.51 19h14.98a2 2 0 0 0 1.66-3.32L15 6.46V2"></path></svg></div>
                 4. เขียนวิจัยบทที่ 3 วิธีการดำเนินการวิจัย
             </a>
-            <!-- เส้นแดงจบมุมล่าง -->
-            <div class="flow-connector c-red" style="grid-area: 7/2/8/3;">
-                <div class="line-h" style="right: 0; width: 50%;"></div>
-                <div class="line-v" style="top: 0; height: 50%;"></div>
+            <!-- เส้นแดงจบมุมล่าง และเส้นดำรับข้อมูลผ่านต่อไป -->
+            <div class="flow-connector" style="grid-area: 7/2/8/3;">
+                <div class="v-red" style="top: 0; height: 50%;"></div>
+                <div class="h-red" style="right: 0; width: 65%;"></div>
+                
+                <div class="v-black" style="top: 0; bottom: 0;"></div>
+                <div class="h-black" style="right: 0; width: 35%;"></div>
             </div>
 
-            <!-- Row 8: Down Arrow -->
+            <!-- Row 8: Down Arrow + เส้นดำลากลง -->
             <div class="arrow-down-main" style="grid-area: 8/3/9/4;"></div>
+            <div class="flow-connector" style="grid-area: 8/2/9/3;">
+                <div class="v-black" style="top: 0; bottom: 0;"></div>
+            </div>
 
             <!-- Row 9: 5. บทที่ 4 + แขนซ้าย + แขนขวา -->
             <a href="5. เขียนวิจัยบทที่4 ผลการวิจัย.html" class="btn-app bg-yellow" style="grid-area: 9/3/10/4;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
                 5. เขียนวิจัยบทที่ 4 ผลการวิจัย
             </a>
-            <!-- เส้นดำเชื่อมซ้ายไป เรียบเรียงใหม่ -->
-            <div class="flow-connector c-black" style="grid-area: 9/2/10/3;">
-                <div class="line-h" style="left: 0; width: 100%;"></div>
-                <div class="arrow-left"></div>
+            <!-- เส้นดำเชื่อมเข้าส่วนที่ 6 และรับข้อมูลบทที่ 4 ทะลุลงไปรับบทที่ 5 -->
+            <div class="flow-connector" style="grid-area: 9/2/10/3;">
+                <div class="v-black" style="top: 0; bottom: 0;"></div>
+                <div class="h-black" style="left: 0; width: 100%;"></div>
+                <div class="arrow-left-black"></div>
             </div>
             <a href="6. ส่วนที่ 6 เรียบเรียงบทที่ 1 ถึง 5  ใหม่.html" class="btn-app bg-teal" style="grid-area: 9/1/10/2;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg></div>
@@ -355,14 +376,22 @@
                 ส่วนที่ 4 สร้างระบบสมมุติข้อมูล
             </a>
 
-            <!-- Row 10: Down Arrow -->
+            <!-- Row 10: Down Arrow + เส้นดำลากลง -->
             <div class="arrow-down-main" style="grid-area: 10/3/11/4;"></div>
+            <div class="flow-connector" style="grid-area: 10/2/11/3;">
+                <div class="v-black" style="top: 0; bottom: 0;"></div>
+            </div>
 
             <!-- Row 11: 6. บทที่ 5 -->
             <a href="6. เขียนวิจัยบทที่5 สรุป อธิปรายผลการวิจัยและข้อเสนอแนะ.html" class="btn-app bg-pink" style="grid-area: 11/3/12/4;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
                 6. เขียนวิจัยบทที่ 5 สรุปและอภิปรายผล
             </a>
+            <!-- เส้นดำเริ่มจากบทที่ 5 จบมุมบนเข้าสู่เส้นหลักฝั่งซ้าย -->
+            <div class="flow-connector" style="grid-area: 11/2/12/3;">
+                <div class="v-black" style="top: 0; height: 50%;"></div>
+                <div class="h-black" style="right: 0; width: 35%;"></div>
+            </div>
 
             <!-- Row 12: Down Arrow -->
             <div class="arrow-down-main" style="grid-area: 12/3/13/4;"></div>
