@@ -184,6 +184,17 @@
         .arrow-down-main::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 5px; background: #1e293b; transform: translateX(-2.5px); }
         .arrow-down-main::after { content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); border-top: 14px solid #1e293b; border-left: 12px solid transparent; border-right: 12px solid transparent; }
 
+        /* ---------------- จัดสมดุลลูกศรสีแดงฝั่งซ้าย (ส่วนที่ 9) ---------------- */
+        .arrow-down-red { 
+            position: relative; 
+            height: 55px; 
+            width: 100%; 
+            z-index: 1; 
+            margin: 5px 0; 
+        }
+        .arrow-down-red::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 5px; background: #e11d48; transform: translateX(-2.5px); }
+        .arrow-down-red::after { content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); border-top: 14px solid #e11d48; border-left: 12px solid transparent; border-right: 12px solid transparent; }
+
         /* ---------------- เส้นเชื่อมซ้าย (แดงและดำคู่ขนาน) ---------------- */
         .v-red { position: absolute; width: 5px; background: #e11d48; left: 35%; transform: translateX(-2.5px); z-index: 2; }
         .v-black { position: absolute; width: 5px; background: #1e293b; left: 65%; transform: translateX(-2.5px); z-index: 1; }
@@ -210,7 +221,8 @@
                 max-width: 450px;
                 width: 100%;
             }
-            .flow-connector, .arrow-down-main { display: none !important; }
+            /* ซ่อนลูกศรและเส้นเชื่อมทั้งหมดในโหมดมือถือ */
+            .flow-connector, .arrow-down-main, .arrow-down-red { display: none !important; }
             .mobile-header {
                 display: block;
                 font-size: 1.2rem;
@@ -324,14 +336,16 @@
                 ส่วนที่ 3 สรุปสังเคราะห์ทบทวนวรรณกรรม
             </a>
 
-            <!-- Row 6: Down Arrow + เส้นคู่เชื่อมลงมา -->
+            <!-- Row 6: Down Arrows + เส้นคู่เชื่อมลงมา -->
             <div class="arrow-down-main" style="grid-area: 6/3/7/4;"></div>
             <div class="flow-connector" style="grid-area: 6/2/7/3;">
                 <div class="v-red" style="top: 0; bottom: 0;"></div>
                 <div class="v-black" style="top: 0; bottom: 0;"></div>
             </div>
+            <!-- ลูกศรสีแดงฝั่งซ้ายชี้ลงไปส่วนที่ 9 -->
+            <div class="arrow-down-red" style="grid-area: 6/1/7/2;"></div>
 
-            <!-- Row 7: 4. บทที่ 3 -->
+            <!-- Row 7: 4. บทที่ 3 + ส่วนที่ 9 (ซ้าย) -->
             <a href="4. เขียนวิจัยบทที่3 วิธีการดำเนินการวิจัย.html" class="btn-app bg-green" style="grid-area: 7/3/8/4;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M9 2v4.46l-6.15 9.22A2 2 0 0 0 4.51 19h14.98a2 2 0 0 0 1.66-3.32L15 6.46V2"></path></svg></div>
                 4. เขียนวิจัยบทที่ 3 วิธีการดำเนินการวิจัย
@@ -344,6 +358,12 @@
                 <div class="v-black" style="top: 0; bottom: 0;"></div>
                 <div class="h-black" style="right: 0; width: 35%;"></div>
             </div>
+            <!-- ปุ่มใหม่ ส่วนที่ 9 (ฝั่งซ้ายใต้ส่วนที่ 5) -->
+            <a href="9. ส่วนที่ 9 ใบยินยอมเข้าร่วมวิจัย.html" class="btn-app bg-blue-light" style="grid-area: 7/1/8/2;">
+                <!-- เปลี่ยนไอคอนเป็นเอกสารมีเครื่องหมายถูก เพื่อสื่อถึงฟอร์มใบยินยอม -->
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 15l2 2 4-4"></path></svg></div>
+                ส่วนที่ 9 ใบยินยอมเข้าร่วมวิจัย
+            </a>
 
             <!-- Row 8: Down Arrow + เส้นดำลากลง -->
             <div class="arrow-down-main" style="grid-area: 8/3/9/4;"></div>
@@ -405,7 +425,7 @@
             <!-- Row 14: Down Arrow -->
             <div class="arrow-down-main" style="grid-area: 14/3/15/4;"></div>
 
-            <!-- Row 15: 8. ปก กิตติกรรมประกาศ ภาคผนวก (ปุ่มใหม่) -->
+            <!-- Row 15: 8. ปก กิตติกรรมประกาศ ภาคผนวก -->
             <a href="8. ส่วนที่ 8 ปก กิตติกรรมประกาศ สารบัญ อื่นๆ.html" class="btn-app bg-purple-dark" style="grid-area: 15/3/16/4;">
                 <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
                 8. ส่วนที่ 8 ปก กิตติกรรมประกาศ สารบัญ อื่นๆ
