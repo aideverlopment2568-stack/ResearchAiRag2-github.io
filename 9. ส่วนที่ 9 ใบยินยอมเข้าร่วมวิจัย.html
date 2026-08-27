@@ -1,0 +1,699 @@
+html_content = '''<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสร้างใบยินยอมอาสาสมัครด้วย AI (Local AI Informed Consent System)</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f9;        /* พื้นหลังสีฟ้าอมเทาสะอาดตา สไตล์วิจัย/การแพทย์ */
+            --card-bg: #ffffff;         /* สีขาวบริสุทธิ์ */
+            --primary-color: #0d6efd;  /* สีน้ำเงินหลักเชิงวิชาการ/การแพทย์ */
+            --primary-hover: #0b5ed7;  
+            --word-color: #2b579a;     /* สีน้ำเงิน Microsoft Word */
+            --word-hover: #1e3e6f;
+            --text-color: #2c3e50;     /* สีตัวอักษรเข้มอ่านง่าย */
+            --border-color: #dce3ec;   /* สีขอบละมุน */
+            --accent-color: #0284c7;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Angsana New', 'TH Sarabun PSK';
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+            max-width: 1650px;
+            margin: 0 auto;
+        }
+        /* แผงควบคุมฝั่งซ้าย */
+        .sidebar {
+            background-color: var(--card-bg);
+            padding: 22px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            height: fit-content;
+            max-height: 92vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+        .sidebar h2 {
+            font-size: 1.15rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid #eef2f7;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .step-btn {
+            display: block;
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.92rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #334155;
+            line-height: 1.4;
+        }
+        .step-btn:hover {
+            background-color: #e2e8f0;
+            border-color: #94a3b8;
+        }
+        .step-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(13, 110, 253, 0.3);
+        }
+        .param-group {
+            margin-top: 22px;
+            font-size: 0.88rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 18px;
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .param-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #475569;
+        }
+        .input-control {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+        
+        /* พื้นที่ทำงานฝั่งขวา */
+        .workspace {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border: 1px solid var(--border-color);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .alert-box {
+            background-color: #eff6ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 12px 16px;
+            font-size: 0.92rem;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            color: #1e40af;
+            line-height: 1.5;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.98rem;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
+            background-color: #fafafa;
+            transition: border-color 0.2s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background-color: #ffffff;
+        }
+        .btn-send {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 26px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 12px;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-send:hover {
+            background-color: #059669;
+        }
+        .btn-send:active {
+            transform: scale(0.98);
+        }
+
+        /* ส่วนแสดงผลลัพธ์ */
+        .output-container {
+            margin-top: 20px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 18px;
+        }
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-minor {
+            background-color: #64748b;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-minor:hover {
+            background-color: #475569;
+        }
+        .btn-word {
+            background-color: var(--word-color);
+        }
+        .btn-word:hover {
+            background-color: var(--word-hover);
+            box-shadow: 0 2px 8px rgba(43, 87, 154, 0.3);
+        }
+        .btn-clear {
+            background-color: #ef4444;
+        }
+        .btn-clear:hover {
+            background-color: #dc2626;
+        }
+        
+        .header-title {
+            background: linear-gradient(135deg, #1e3a8a, #0284c7);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-title h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        .header-title p {
+            margin: 4px 0 0 0;
+            font-size: 0.88rem;
+            opacity: 0.9;
+        }
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-title">
+    <div>
+        <h1>📋 ส่วน 9 ระบบประมวลผล AI สร้างหนังสือยินยอมอาสาสมัครการวิจัย </h1>
+        <p>เครื่องมือช่วยเหลือการสร้างใบยินยอมและเอกสารชี้แจงผู้เข้าร่วมการวิจัย ด้วย Local AI </p>
+    </div>
+    <span class="badge">Local AI Engine</span>
+</div>
+
+<div class="container">
+    
+    <!-- แผงควบคุมฝั่งซ้าย -->
+    <div class="sidebar">
+        <h2>📌 ขั้นตอนสร้างเอกสาร มี 3 ขั้นตอน </h2>
+        <button class="step-btn active" onclick="switchPhase(1)">
+            <b>เฟส 1:</b> สกัดข้อมูลสำคัญและข้อกำหนดจริยธรรม (Consent Data Extraction)
+        </button>
+        <button class="step-btn" onclick="switchPhase(2)">
+            <b>เฟส 2:</b> ร่างหนังสือแสดงความยินยอมเข้าร่วมการวิจัย (Informed Consent Form - ICF)
+        </button>
+        <button class="step-btn" onclick="switchPhase(3)">
+            <b>เฟส 3:</b> ร่างเอกสารชี้แจงข้อมูลผู้เข้าร่วมการวิจัย (Participant Information Sheet - PIS)
+        </button>
+		
+        <div class="param-group">
+            <label for="serverUrl">Local AI Endpoint URL:</label>
+            <input type="text" id="serverUrl" class="input-control" value="http://localhost:1234/v1/chat/completions">
+
+            <label for="modelName">Model (LM Studio):</label>
+            <input type="text" id="modelName" class="input-control" value="gemma-4-e4b-it-qat">
+            
+            <label for="tempRange">Temperature (ความสร้างสรรค์/ความเป๊ะ):</label>
+            <input type="range" id="tempRange" min="0.1" max="1.0" step="0.1" value="0.2" style="width:100%;">
+            <div style="display:flex; justify-content:space-between; color:#64748b; font-size:0.8rem;">
+                <span>เป๊ะมาก (0.1)</span>
+                <span id="tempVal" style="font-weight:bold; color:var(--primary-color);">0.2</span>
+                <span>สร้างสรรค์ (1.0)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- พื้นที่ทำงานฝั่งขวา -->
+    <div class="workspace">
+        
+        <div class="card">
+            <h3>1. กล่องปรับแต่งคำสั่งระบบ (System Prompt)</h3>
+            <textarea id="systemPromptBox" rows="8"></textarea>
+        </div>
+
+        <div class="card">
+            <h3 id="phaseTitle">2. ข้อมูลโครงการวิจัยดิบจากผู้ใช้ (User Input)</h3>
+            <div class="alert-box" id="phaseNotice">
+                คำแนะนำจะแสดงที่นี่ตามเฟสที่คุณเลือก
+            </div>
+            <textarea id="userInputBox" rows="7" placeholder="วางข้อมูลโครงการวิจัย วัตถุประสงค์ ขั้นตอน กลุ่มตัวอย่าง หรือบทที่ 1, 3 ที่นี่..."></textarea>
+            
+            <button class="btn-send" onclick="submitToLocalAI()">
+                <span>ส่งให้ AI ประมวลผลแบบสตรีมมิ่ง</span> 🚀
+            </button>
+
+            <div class="output-container">
+                <h3>
+                    <span>3. ผลลัพธ์เอกสารที่ AI ร่างขึ้น</span>
+                </h3>
+                <div class="action-bar">
+                    <button class="btn-minor" onclick="copyToClipboard()">📋 คัดลอกข้อความ (Copy)</button>
+                    <button class="btn-minor btn-word" onclick="downloadWord()">📄 ดาวน์โหลด Word (.doc)</button>
+                    <button class="btn-minor btn-clear" onclick="document.getElementById('outputBox').value=''">🗑️ ล้างข้อมูล (Clear)</button>
+                </div>
+                <textarea id="outputBox" rows="18" placeholder="ผลลัพธ์จะค่อย ๆ ประมวลผลและทยอยแสดงข้อความที่นี่..."></textarea>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.getElementById('tempRange').addEventListener('input', (e) => {
+        document.getElementById('tempVal').innerText = e.target.value;
+    });
+
+    const templates = {
+        1: {
+            title: "เฟส 1: สกัดข้อมูลสำคัญเพื่อเตรียมทำใบยินยอมและเอกสารชี้แจง (Informed Consent Data Extraction)",
+            notice: "ให้นำข้อเสนอโครงการวิจัย (Proposal) หรือเนื้อหาบทที่ 1 และ บทที่ 3 มาวาง AI จะสกัดองค์ประกอบด้านจริยธรรมที่จำเป็นตามมาตรฐานการวิจัยในมนุษย์ (IRB/REC) เพื่อเตรียมความพร้อมสำหรับร่างใบยินยอมในขั้นตอนถัดไป",
+            system: `# Context
+ผู้ใช้กำลังเตรียมชุดข้อมูลโครงร่างการวิจัยเพื่อนำไปสร้าง "หนังสือแสดงความยินยอมเข้าร่วมการวิจัย (Informed Consent Form)" และ "เอกสารชี้แจงข้อมูลผู้เข้าร่วมการวิจัย (Participant Information Sheet)" หน้าที่ของคุณคือสกัดและวิเคราะห์ประเด็นคุ้มครองสิทธิอาสาสมัครตามมาตรฐานจริยธรรมการวิจัยในมนุษย์ (Human Research Ethics Committee / IRB)
+
+# [1. Role & Persona]
+คุณคือ "ผู้เชี่ยวชาญด้านจริยธรรมการวิจัยในมนุษย์และเลขาธิการคณะกรรมการจริยธรรมการวิจัย" (Human Research Ethics Officer & Informed Consent Specialist) มีความเชี่ยวชาญในการวิเคราะห์สกัดประเด็นความเสี่ยง ประโยชน์ สิทธิของผู้เข้าร่วมการวิจัย และกระบวนการขอความยินยอมอย่างครบถ้วน แม่นยำ และรัดกุม
+
+# [2. Core Instructions & Workflow]
+เมื่อผู้ใช้ป้อนข้อมูลโครงการวิจัยเข้ามา จงทำการสกัดและจัดหมวดหมู่ข้อมูลสำคัญ 10 ประเด็นหลักดังต่อไปนี้:
+
+1. **ชื่อโครงการวิจัย (Project Title):** สกัดทั้งภาษาไทยและภาษาอังกฤษ (ถ้ามี)
+2. **คณะผู้วิจัยและสังกัด (Research Team & Affiliation):** ชื่อผู้วิจัยหลัก อาจารย์ที่ปรึกษา สังกัดหน่วยงาน และช่องทางติดต่อ
+3. **วัตถุประสงค์ของโครงการ (Research Objectives):** สรุปวัตถุประสงค์สั้นๆ ที่เข้าใจง่าย
+4. **กลุ่มเป้าหมาย/อาสาสมัคร (Target Participants):** คุณสมบัติ จำนวน และเกณฑ์คัดเข้า/คัดออก
+5. **ขั้นตอนและกิจกรรมที่อาสาสมัครต้องปฏิบัติ (Participant Procedures):** ระบุสิ่งที่ต้องทำ เช่น ตอบแบบสอบถาม เจาะเลือด สัมภาษณ์ ระยะเวลาที่ใช้ และจำนวนครั้ง
+6. **ความเสี่ยง ความไม่สบายกาย/ใจ ที่อาจเกิดขึ้น (Potential Risks & Discomforts):** พร้อมมาตรการป้องกัน/แก้ไข/การเยียวยา
+7. **ประโยชน์ที่คาดว่าจะได้รับ (Expected Benefits):** ทั้งต่อตัวอาสาสมัครเองและต่อสังคม/วงการวิชาการ
+8. **การรักษาความลับและการคุ้มครองข้อมูลส่วนบุคคล (Confidentiality & Privacy):** วิธีการจัดเก็บข้อมูล การทำลายข้อมูล และการไม่เปิดเผยตัวตน (Anonymity)
+9. **สิทธิในการเข้าร่วมและถอนตัว (Voluntary Participation & Right to Withdraw):** การเข้าร่วมเป็นไปด้วยความสมัครใจ สามารถถอนตัวได้ตลอดเวลาโดยไม่มีผลกระทบใดๆ
+10. **ค่าตอบแทน/ค่าเดินทาง/การชดเชย (Compensation & Expense Reimbursement):** (ถ้ามี) ระบุให้ชัดเจน
+
+# [3. Constraints]
+- หากข้อมูลส่วนใดไม่มีในข้อเสนอโครงการ ให้ระบุว่า "[ไม่ระบุในข้อมูลดิบ - โปรดระบุเพิ่มเติม]" ห้ามแต่งข้อมูลขึ้นเองเด็ดขาด
+- ห้ามเขียนใบยินยอมฉบับเต็มในเฟสนี้ ให้แสดงผลลัพธ์เป็นโครงสร้างข้อมูล (Data Structure) สำหรับตรวจทานก่อน
+
+# [4. Output Formatting]
+จงแสดงผลลัพธ์ในรูปแบบ Markdown ดังนี้:
+
+### ข้อมูลสกัดจริยธรรมการวิจัยเพื่อเตรียมทำใบยินยอม (Ethics & Consent Data Extraction)
+
+* **1. ชื่อโครงการวิจัย:** [...]
+* **2. คณะผู้วิจัยและสังกัด:** [...]
+* **3. วัตถุประสงค์ของโครงการ:** [...]
+* **4. กลุ่มเป้าหมาย/อาสาสมัคร:** [...]
+* **5. ขั้นตอนที่อาสาสมัครต้องปฏิบัติ:** [...]
+* **6. ความเสี่ยงและความไม่สบายที่อาจเกิดขึ้น:** [...]
+* **7. ประโยชน์ที่คาดว่าจะได้รับ:** [...]
+* **8. การรักษาความลับและข้อมูลส่วนบุคคล:** [...]
+* **9. สิทธิการเข้าร่วมและถอนตัว:** [...]
+* **10. ค่าตอบแทน/ค่าเดินทาง:** [...]
+
+*(ข้อความทิ้งท้าย: "สกัดข้อมูลจริยธรรมและเงื่อนไขใบยินยอมเรียบร้อยแล้ว กรุณาตรวจสอบความถูกต้อง ก่อนกดเลือก เฟส 2 เพื่อร่างหนังสือแสดงความยินยอมเข้าร่วมการวิจัยฉบับเต็มครับ")*`
+        },
+        2: {
+            title: "เฟส 2: ร่างหนังสือแสดงความยินยอมเข้าร่วมการวิจัยฉบับเต็ม (Informed Consent Form Generator)",
+            notice: "นำ [ข้อมูลสกัดจากเฟส 1] หรือข้อมูลโครงการมาป้อน ระบบจะสร้างหนังสือแสดงความยินยอมเข้าร่วมการวิจัย (ICF) ในรูปแบบมาตรฐานของคณะกรรมการจริยธรรมการวิจัยในมนุษย์ (IRB) พร้อมตาราง/ช่องลงชื่อของผู้เข้าร่วม พยาน และผู้วิจัย",
+            system: `# Context
+ผู้ใช้ต้องการร่าง "หนังสือแสดงความยินยอมเข้าร่วมการวิจัย (Informed Consent Form - ICF)" ที่ถูกต้องตามแบบฟอร์มมาตรฐานของคณะกรรมการจริยธรรมการวิจัยในมนุษย์ (IRB/REC) เพื่อให้อาสาสมัครอ่านและลงนามยินยอมด้วยความสมัครใจ
+
+# [1. Role & Persona]
+คุณคือ "นิติกรและผู้เชี่ยวชาญการจัดทำเอกสารยินยอมเข้าร่วมการวิจัย" (Research Ethics Legal & Consent Form Drafter) ที่มีความชำนาญในการเขียนหนังสือแสดงความยินยอมที่มีข้อความถูกต้อง สมบูรณ์ รัดกุม ชัดเจน มีภาษาที่เป็นทางการและเคารพสิทธิอาสาสมัครตามปฏิญญาเฮลซิงกิ (Declaration of Helsinki) และหลักจริยธรรมสากล (CIOMS / ICH-GCP)
+
+# [2. Core Instructions & Workflow]
+เมื่อได้รับชุดข้อมูลโครงการ ให้จัดทำร่าง "หนังสือแสดงความยินยอมเข้าร่วมการวิจัย" ตามโครงสร้างมาตรฐานดังนี้:
+
+1. **ส่วนหัวเอกสาร:** ระบุชื่อเอกสาร "หนังสือแสดงความยินยอมเข้าร่วมการวิจัย (Informed Consent Form)" ชื่อโครงการวิจัย ชื่อผู้วิจัย และสถานที่ทำหนังสือ
+2. **ข้อความคำรับรองของผู้เข้าร่วมการวิจัย:** 
+   - ข้อความระบุชื่อ-นามสกุล อายุ ที่อยู่ ของผู้ทำหนังสือ
+   - ข้อความยืนยันว่าได้อ่านและได้รับฟังคำอธิบายเกี่ยวกับวัตถุประสงค์ ขั้นตอน ความเสี่ยง ประโยชน์ และการคุ้มครองความลับอย่างเข้าใจแล้ว
+   - ข้อความยืนยันว่าได้รับตอบข้อสงสัยจนเป็นที่พอใจแล้ว
+3. **ข้อความแสดงความยินยอมโดยสมัครใจ:**
+   - ยินยอมเข้าร่วมการวิจัยด้วยความสมัครใจ โดยไม่ถูกข่มขู่ บังคับ หรือหลอกลวง
+   - รับทราบว่าสามารถถอนตัวจากการวิจัยเมื่อใดก็ได้ โดยไม่ต้องแจ้งเหตุผล และจะไม่สูญเสียสิทธิประโยชน์ใดๆ ที่พึงได้รับ
+   - ยินยอมให้ผู้วิจัยใช้ข้อมูลเพื่อการวิเคราะห์และเผยแพร่ผลงานวิชาการโดยไม่เปิดเผยชื่อหรือตัวตนจริง
+4. **ส่วนการลงนาม (Signature Block):**
+   - ช่องลงนามและลายมือชื่อของ ผู้ยินยอม / ผู้เข้าร่วมการวิจัย (พร้อมวันที่)
+   - ช่องลงนามและลายมือชื่อของ ผู้มีอำนาจให้ยินยอมแทนตามกฎหมาย (กรณีผู้ป่วย/ผู้เยาว์/ผู้ไร้ความสามารถ)
+   - ช่องลงนามและลายมือชื่อของ พยาน (Witness)
+   - ช่องลงนามและลายมือชื่อของ ผู้วิจัยผู้ขอความยินยอม (Principal Investigator / Consent Collector)
+
+# [3. Constraints]
+- ใช้ภาษาไทยทางการ สุภาพ ชัดเจน อ่านแล้วเข้าใจง่าย ไม่ซับซ้อน
+- จัดรูปแบบช่องลงลายมือชื่อให้สวยงาม เป็นระเบียบ เพื่อให้นำไปพิมพ์ลง Word ได้ทันที
+
+# [4. Output Formatting]
+จงแสดงผลลัพธ์ในรูปแบบ Markdown ดังนี้:
+
+# หนังสือแสดงความยินยอมเข้าร่วมการวิจัย
+**(Informed Consent Form)**
+
+**ชื่อโครงการวิจัย (ไทย):** [ชื่อโครงการ]
+**ชื่อโครงการวิจัย (อังกฤษ):** [Project Title]
+**ชื่อผู้วิจัยหลัก:** [ชื่อผู้วิจัย]
+**สังกัด:** [หน่วยงาน/คณะ/มหาวิทยาลัย]
+
+ทำที่: [สถานที่ทำหนังสือ เช่น โรงพยาบาล/มหาวิทยาลัย]
+วันที่ [......] เดือน [.......................] พ.ศ. [............]
+
+ข้าพเจ้า (นาย/นาง/นางสาว/ยศ)..................................................................... อายุ............ปี
+อาศัยอยู่บ้านเลขที่................... ถนน........................................ ตำบล/แขวง...................................
+อำเภอ/เขต................................... จังหวัด................................... โทรศัพท์...................................
+
+ขอทำหนังสือฉบับนี้ไว้ให้แก่ผู้วิจัยเพื่อแสดงว่า:
+1. ข้าพเจ้าได้รับการอธิบายถึงวัตถุประสงค์ของการวิจัย ขั้นตอนการเข้าร่วม ความเสี่ยง ความไม่สบายที่อาจเกิดขึ้น ตลอดจนประโยชน์ที่จะได้รับจากการวิจัยเรื่องนี้อย่างละเอียดและเข้าใจดีแล้ว
+2. ข้าพเจ้าได้มีโอกาสซักถามข้อสงสัยเกี่ยวกับโครงการวิจัยนี้ และได้รับคำตอบเป็นที่พอใจแล้ว
+3. ข้าพเจ้าเข้าร่วมโครงการวิจัยนี้ด้วยความสมัครใจ โดยไม่มีการบังคับ ข่มขู่ หรือจูงใจด้วยสิ่งตอบแทนเกินจริง
+4. ข้าพเจ้ารับทราบว่า ข้าพเจ้ามีสิทธิที่จะถอนตัวออกจากโครงการวิจัยนี้เมื่อใดก็ได้ โดยไม่จำเป็นต้องระบุเหตุผล และการถอนตัวนั้นจะไม่มีผลกระทบต่อการดูแลรักษา หรือสิทธิประโยชน์ที่ข้าพเจ้าพึงได้รับแต่ประการใด
+5. ข้าพเจ้ายินยอมให้ผู้วิจัยใช้ข้อมูลของข้าพเจ้าเพื่อการวิจัยและเผยแพร่ผลการวิจัยในทางวิชาการ โดยข้อมูลของข้าพเจ้าจะถูกเก็บรักษาเป็นความลับ และไม่ระบุชื่อ-นามสกุลจริงของข้าพเจ้าต่อสาธารณะ
+
+ข้าพเจ้าได้อ่านและเข้าใจข้อความข้างต้นโดยตลอดแล้ว จึงได้ลงลายมือชื่อไว้เป็นสำคัญต่อหน้าพยาน
+
+ลงชื่อ............................................................ ผู้เข้าร่วมการวิจัย / ผู้ให้ความยินยอม
+(............................................................)
+วันที่........../........../..........
+
+ลงชื่อ............................................................ ผู้มีอำนาจให้ยินยอมแทนตามกฎหมาย (ถ้ามี)
+(............................................................) ความสัมพันธ์........................................
+วันที่........../........../..........
+
+ลงชื่อ............................................................ พยาน
+(............................................................)
+วันที่........../........../..........
+
+ลงชื่อ............................................................ ผู้วิจัยผู้ขอความยินยอม
+(............................................................)
+วันที่........../........../..........`
+        },
+        3: {
+            title: "เฟส 3: ร่างเอกสารชี้แจงข้อมูลผู้เข้าร่วมการวิจัย (Participant Information Sheet - PIS)",
+            notice: "นำข้อมูลโครงการมาป้อน ระบบจะสร้างเอกสารชี้แจงข้อมูลแก่ผู้เข้าร่วมการวิจัย (Participant Information Sheet) ที่เขียนด้วยภาษาสุภาพ เข้าใจง่าย ไม่มีคำศัพท์เทคนิคซับซ้อน เหมาะสำหรับให้อาสาสมัครอ่านก่อนเซ็นใบยินยอม",
+            system: `# Context
+ผู้ใช้ต้องการจัดทำ "เอกสารชี้แจงข้อมูลผู้เข้าร่วมการวิจัย (Participant Information Sheet - PIS)" เพื่อมอบให้อาสาสมัครหรือผู้เข้าร่วมการวิจัยอ่านทำความเข้าใจก่อนการตัดสินใจลงนามในหนังสือยินยอม
+
+# [1. Role & Persona]
+คุณคือ "ผู้เชี่ยวชาญด้านการสื่อสารสุขภาพและจริยธรรมการวิจัย" (Health Communication & Research Ethics Communicator) ที่สามารถแปลงข้อความทางวิชาการที่ซับซ้อน ให้กลายเป็นภาษาพูด/ภาษาเขียนที่สุภาพ เป็นมิตร เข้าใจง่าย ละมุนละม่อม และตรงไปตรงมา โดยไม่มีภาษาเทคนิคที่ยากเกินเข้าใจ
+
+# [2. Core Instructions & Workflow]
+ร่างเอกสารชี้แจงข้อมูลผู้เข้าร่วมการวิจัย (PIS) ตามโครงสร้าง 8 หัวข้อหลัก:
+
+1. **คำเชิญชวนและวัตถุประสงค์ (Invitation & Purpose):** กล่าวทักทาย เชิญชวน และอธิบายว่าทำไมถึงเชิญเข้าร่วม พร้อมอธิบายวัตถุประสงค์ของงานวิจัยด้วยภาษาที่เข้าใจง่าย
+2. **เหตุผลที่ท่านได้รับเชิญ (Why you are invited):** คุณสมบัติของอาสาสมัครที่ตรงกับโครงการ
+3. **หากท่านเข้าร่วม จะต้องทำอะไรบ้าง (What will happen if you take part):** ขั้นตอน กิจกรรม ระยะเวลาที่ใช้ (เช่น ตอบแบบสอบถาม 15 นาที หรือเจาะเลือด 5 มล.)
+4. **ความเสี่ยงหรือความไม่สบายที่อาจเกิดขึ้น (Risks & Discomforts):** อธิบายความเสี่ยงตามจริง และแนวทางการช่วยเหลือป้องกันของผู้วิจัย
+5. **ประโยชน์ที่ท่านหรือผู้อื่นจะได้รับ (Benefits):** ประโยชน์โดยตรงหรือประโยชน์ต่อส่วนรวม
+6. **การคุ้มครองความลับและความเป็นส่วนตัว (Confidentiality):** อธิบายว่าข้อมูลจะถูกเก็บปลอดภัยอย่างไร ใครเข้าถึงได้บ้าง และรายงานผลในภาพรวมอย่างไร
+7. **การเข้าร่วมเป็นไปด้วยความสมัครใจ (Voluntary Choice):** ย้ำชัดเจนว่าท่านปฏิเสธหรือถอนตัวเมื่อใดก็ได้ โดยไม่มีผลเสียใดๆ ทั้งสิ้น
+8. **ช่องทางการติดต่อ (Contact Information):** ระบุชื่อผู้วิจัย เบอร์โทรศัพท์ อีเมล และช่องทางติดต่อคณะกรรมการจริยธรรมฯ (IRB) ประจำสถาบัน
+
+# [3. Constraints]
+- ใช้ภาษาสุภาพ อ่านง่าย ปราศจากศัพท์วิชาการซับซ้อน (หากจำเป็นต้องมี ให้มีคำอธิบายเพิ่มเติม)
+- เน้นสร้างความสบายใจและสร้างความเคารพในศักดิ์ศรีความเป็นมนุษย์ของผู้เข้าร่วม
+
+# [4. Output Formatting]
+จงแสดงผลลัพธ์ในรูปแบบ Markdown ดังนี้:
+
+# เอกสารชี้แจงข้อมูลผู้เข้าร่วมการวิจัย
+**(Participant Information Sheet - PIS)**
+
+**ชื่อโครงการวิจัย:** [ชื่อโครงการ ภาษาไทย/อังกฤษ]
+**เรียน:** ท่านผู้มีเกียรติ / ผู้เข้าร่วมการวิจัย
+
+ท่านกำลังได้รับการเชิญชวนให้เข้าร่วมในโครงการศึกษาวิจัย ขอความกรุณาท่านอ่านข้อมูลในเอกสารฉบับนี้อย่างละเอียด เพื่อทำความเข้าใจเกี่ยวกับวัตถุประสงค์และกิจกรรมของการวิจัยก่อนตัดสินใจ
+
+---
+
+### 1. ทำไมเราจึงเชิญท่านเข้าร่วมการวิจัย?
+[อธิบายด้วยภาษาที่เข้าใจง่าย เช่น ท่านเป็นผู้ที่มีคุณสมบัติ...]
+
+### 2. วัตถุประสงค์ของโครงการวิจัยนี้คืออะไร?
+[อธิบายวัตถุประสงค์สั้นๆ สุภาพ ไม่ใช้ภาษาเทคนิคยากๆ]
+
+### 3. หากท่านยินยอมเข้าร่วม ท่านจะต้องทำอะไรบ้าง?
+* **กิจกรรม:** [เช่น ตอบแบบสอบถาม / การสัมภาษณ์ / การตรวจวัด]
+* **ระยะเวลาที่ใช้:** [เช่น ประมาณ 15-20 นาที เพียงครั้งเดียว]
+* **สถานที่:** [ระบุสถานที่หรือช่องทางออนไลน์]
+
+### 4. มีความเสี่ยงหรือความไม่สบายกาย/ใจ อย่างไรบ้าง?
+[อธิบายความเสี่ยงตามความเป็นจริง พร้อมมาตรการดูแลของผู้วิจัย]
+
+### 5. ท่านจะได้รับประโยชน์อย่างไรจากการเข้าร่วม?
+[อธิบายประโยชน์โดยตรง หรือประโยชน์ต่อสังคมและการพัฒนาการบริการ]
+
+### 6. ข้อมูลส่วนตัวของท่านจะถูกเก็บรักษาเป็นความลับอย่างไร?
+ข้อมูลทั้งหมดของท่านจะถูกเก็บเป็นความลับสูงสุด จะไม่มีการระบุชื่อหรือข้อมูลที่ระบุตัวตนของท่านในรายงานวิจัย โดยผลการวิจัยจะถูกนำเสนอในภาพรวมเท่านั้น
+
+### 7. ท่านสามารถปฏิเสธหรือถอนตัวได้หรือไม่?
+การเข้าร่วมการวิจัยครั้งนี้เป็นไปโดย **ความสมัครใจของท่าน 100%** ท่านมีสิทธิ์ที่จะปฏิเสธไม่เข้าร่วม หรือถอนตัวออกจากการวิจัยได้ตลอดเวลา โดยไม่จำเป็นต้องแจ้งเหตุผล และจะไม่ส่งผลกระทบใดๆ ต่อการรับบริการ หรือสิทธิประโยชน์ที่ท่านพึงได้รับ
+
+### 8. หากมีข้อสงสัย ท่านสามารถติดต่อใครได้บ้าง?
+* **ผู้วิจัยหลัก:** [ชื่อ-นามสกุล] | **เบอร์โทรศัพท์:** [เบอร์โทร] | **อีเมล:** [อีเมล]
+* **สังกัด:** [หน่วยงาน/คณะ]
+* **คณะกรรมการจริยธรรมการวิจัยในมนุษย์:** [ชื่อหน่วยงาน IRB/REC] | **เบอร์โทร:** [เบอร์โทร IRB]`
+        }
+    };
+
+    let currentPhase = 1;
+
+    function switchPhase(phaseNum) {
+        currentPhase = phaseNum;
+        
+        document.querySelectorAll('.step-btn').forEach((btn, idx) => {
+            if(idx === phaseNum - 1) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        document.getElementById('phaseTitle').innerText = templates[phaseNum].title;
+        document.getElementById('phaseNotice').innerText = templates[phaseNum].notice;
+        document.getElementById('systemPromptBox').value = templates[phaseNum].system;
+        
+        document.getElementById('userInputBox').value = "";
+    }
+
+    window.onload = function() {
+        switchPhase(1);
+    };
+
+    async function submitToLocalAI() {
+        const outputBox = document.getElementById('outputBox');
+        outputBox.value = "กำลังเชื่อมต่อเซิร์ฟเวอร์ Local AI... กรุณารอสักครู่ ⏳\n";
+        
+        const serverUrl = document.getElementById('serverUrl').value.trim();
+        const systemPrompt = document.getElementById('systemPromptBox').value;
+        const userInput = document.getElementById('userInputBox').value;
+        const modelName = document.getElementById('modelName').value.trim();
+        const temperature = parseFloat(document.getElementById('tempRange').value);
+
+        if (!userInput.trim()) {
+            alert('กรุณากรอกข้อมูลดิบหรือข้อเสนอโครงการวิจัยก่อนส่งให้ AI ประมวลผลครับ');
+            outputBox.value = "กรุณากรอกข้อมูลในช่อง 'ข้อมูลโครงการวิจัยดิบจากผู้ใช้' ก่อนครับ";
+            return;
+        }
+
+        try {
+            const response = await fetch(serverUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userInput }
+                    ],
+                    temperature: temperature,
+                    stream: true 
+                })
+            });
+
+            if (!response.ok) throw new Error("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ Local AI ได้ กรุณาตรวจสอบว่าเปิด LM Studio หรือ Local Server (Port 1234) แล้วหรือยัง");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            outputBox.value = ""; 
+            let fullText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                
+                const lines = chunk.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices[0].delta.content;
+                            if (content) {
+                                fullText += content;
+                                
+                                // ลบความคิดในแท็ก think/channel ออกเพื่อแสดงเฉพาะผลลัพธ์สุทธิ
+                                let cleanText = fullText.replace(/<\|channel>thought[\s\S]*?<channel|>/g, '').trim();
+                                cleanText = cleanText.replace(/<\|channel>thought[\s\S]*/g, '').trim();
+                                cleanText = cleanText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                                cleanText = cleanText.replace(/<think>[\s\S]*/g, '').trim();
+                                
+                                outputBox.value = cleanText;
+                                outputBox.scrollTop = outputBox.scrollHeight;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+
+        } catch (error) {
+            outputBox.value = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error.message + "\n\n💡 คำแนะนำการแก้ไข:\n1. ตรวจสอบว่าเปิดโปรแกรม LM Studio หรือ Local AI Server แล้วหรือยัง\n2. ตรวจสอบว่าได้กด Start Server ที่พอร์ต 1234 (หรือ URL ตรงกับที่ระบุ)\n3. ตรวจสอบว่าชื่อ Model ตรงกับตัวที่โหลดไว้ในโปรแกรม";
+        }
+    }
+
+    function copyToClipboard() {
+        const outputBox = document.getElementById('outputBox');
+        if (!outputBox.value.trim()) {
+            alert('ไม่มีเนื้อหาให้คัดลอก');
+            return;
+        }
+        outputBox.select();
+        document.execCommand('copy');
+        alert('คัดลอกเนื้อหาลงคลิปบอร์ดเรียบร้อยแล้ว สามารถนำไปวางใช้งานได้ทันทีครับ!');
+    }
+
+    function downloadWord() {
+        const text = document.getElementById('outputBox').value;
+        if (!text.trim()) {
+            alert('ไม่มีข้อมูลสำหรับดาวน์โหลดเป็นไฟล์ Word กรุณาให้ AI สร้างเอกสารก่อนครับ');
+            return;
+        }
+
+        // แปลงรูปแบบ Markdown เบื้องต้นให้เป็น HTML เพื่อความสวยงามใน MS Word
+        let formattedText = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/^### (.*$)/gim, '<h3 style="color: #0d6efd; font-size: 16pt; margin-top: 15pt; margin-bottom: 6pt;">$1</h3>')
+            .replace(/^## (.*$)/gim, '<h2 style="color: #0f172a; font-size: 18pt; border-bottom: 1px solid #cbd5e1; padding-bottom: 4pt; margin-top: 18pt;">$1</h2>')
+            .replace(/^# (.*$)/gim, '<h1 style="color: #0f172a; font-size: 20pt; text-align: center; margin-bottom: 12pt;">$1</h1>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+
+        const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' 
+               xmlns:w='urn:schemas-microsoft-com:office:word' 
+               xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>หนังสือแสดงความยินยอมเข้าร่วมการวิจัย</title>
+            <style>
+                @page {
+                    size: A4;
+                    margin: 2.54cm 2.54cm 2.54cm 2.54cm;
+                }
+                body { 
+                    font-family: 'TH Sarabun Chana', 'TH Sarabun PSK', 'Angsana New', 'Cordia New', sans-serif; 
+                    font-size: 16pt; 
+                    line-height: 1.6; 
+                    color: #000000;
+                }
+                h1, h2, h3, h4 {
+                    font-weight: bold;
+                }
+                p {
+                    margin-bottom: 8pt;
+                    text-align: justify;
+                }
+            </style>
+        </head>
+        <body>`;
+        const footer = "</body></html>";
+        
+        const sourceHTML = header + "<div>" + formattedText + "</div>" + footer;
+
+        const blob = new Blob(['\ufeff' + sourceHTML], {
+            type: 'application/msword;charset=utf-8'
+        });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // กำหนดชื่อไฟล์ตามเฟส
+        let filename = "หนังสือยินยอมเข้าร่วมการวิจัย_Informed_Consent.doc";
+        if (currentPhase === 1) filename = "ข้อมูลสกัดจริยธรรม_Consent_Extraction.doc";
+        if (currentPhase === 3) filename = "เอกสารชี้แจงผู้เข้าร่วมการวิจัย_PIS.doc";
+
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+</script>
+
+</body>
+</html>
